@@ -1,0 +1,219 @@
+version: "3.8"
+
+services:
+  # ==================== HADOOP CLUSTER ====================
+  namenode:
+    image: bde2020/hadoop-namenode:2.0.0-hadoop3.2.1-java8
+    container_name: namenode
+    hostname: namenode
+    restart: always
+    ports:
+      - "9870:9870" # HDFS Web UI
+      - "9000:9000" # HDFS IPC
+    volumes:
+      - hadoop_namenode:/hadoop/dfs/name
+      - ./data:/data
+    environment:
+      - CLUSTER_NAME=retail-cluster
+    env_file:
+      - ./config/hadoop.env
+    networks:
+      - bigdata-network
+
+  datanode:
+    image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
+    container_name: datanode
+    hostname: datanode
+    restart: always
+    ports:
+      - "9864:9864" # DataNode Web UI
+    volumes:
+      - hadoop_datanode:/hadoop/dfs/data
+    environment:
+      SERVICE_PRECONDITION: "namenode:9870"
+    env_file:
+      - ./config/hadoop.env
+    networks:
+      - bigdata-network
+    depends_on:
+      - namenode
+
+  # ==================== HIVE ====================
+  postgres-metastore:
+    image: postgres:9.5
+    container_name: postgres-metastore
+    hostname: postgres-metastore
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: metastore
+      POSTGRES_USER: hive
+      POSTGRES_PASSWORD: hive123
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - bigdata-network
+
+  hive-metastore:
+    image: bde2020/hive:2.3.2-postgresql-metastore
+    container_name: hive-metastore
+    hostname: hive-metastore
+    restart: always
+    env_file:
+      - ./config/hadoop.env
+    command: /opt/hive/bin/hive --service metastore
+    environment:
+      SERVICE_PRECONDITION: "namenode:9870 datanode:9864 postgres-metastore:5432"
+    ports:
+      - "9083:9083"
+    volumes:
+      - ./config/hive-site.xml:/opt/hive/conf/hive-site.xml
+    networks:
+      - bigdata-network
+    depends_on:
+      - namenode
+      - datanode
+      - postgres-metastore
+
+  hive-server:
+    image: bde2020/hive:2.3.2-postgresql-metastore
+    container_name: hive-server
+    hostname: hive-server
+    restart: always
+    env_file:
+      - ./config/hadoop.env
+    environment:
+      HIVE_CORE_CONF_javax_jdo_option_ConnectionURL: "jdbc:postgresql://postgres-metastore/metastore"
+      SERVICE_PRECONDITION: "hive-metastore:9083"
+    ports:
+      - "10000:10000"
+      - "10002:10002"
+    volumes:
+      - ./config/hive-site.xml:/opt/hive/conf/hive-site.xml
+    networks:
+      - bigdata-network
+    depends_on:
+      - hive-metastore
+
+  # ==================== SPARK ====================
+  spark-master:
+    image: bde2020/spark-master:3.1.1-hadoop3.2
+    container_name: spark-master
+    hostname: spark-master
+    restart: always
+    ports:
+      - "8080:8080" # Spark Master Web UI
+      - "7077:7077" # Spark Master Port
+    environment:
+      - INIT_DAEMON_STEP=setup_spark
+    volumes:
+      - ./spark-apps:/spark-apps
+      - ./data:/data
+      - ./config/hive-site.xml:/spark/conf/hive-site.xml
+    networks:
+      - bigdata-network
+    depends_on:
+      - namenode
+      - datanode
+
+  spark-worker:
+    image: bde2020/spark-worker:3.1.1-hadoop3.2
+    container_name: spark-worker
+    hostname: spark-worker
+    restart: always
+    ports:
+      - "8081:8081" # Spark Worker Web UI
+    environment:
+      - SPARK_MASTER=spark://spark-master:7077
+      - SPARK_WORKER_CORES=2
+      - SPARK_WORKER_MEMORY=2G
+    volumes:
+      - ./spark-apps:/spark-apps
+      - ./data:/data
+    networks:
+      - bigdata-network
+    depends_on:
+      - spark-master
+
+  # ==================== MONGODB ====================
+  mongodb:
+    image: mongo:6.0
+    container_name: mongodb
+    hostname: mongodb
+    restart: always
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: admin123
+      MONGO_INITDB_DATABASE: retail_analytics
+    volumes:
+      - mongodb_data:/data/db
+      - ./mongo-init:/docker-entrypoint-initdb.d
+    networks:
+      - bigdata-network
+
+  mongo-express:
+    image: mongo-express:1.0.0-alpha
+    container_name: mongo-express
+    restart: always
+    ports:
+      - "8082:8081"
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: admin
+      ME_CONFIG_MONGODB_ADMINPASSWORD: admin123
+      ME_CONFIG_MONGODB_URL: mongodb://admin:admin123@mongodb:27017/
+      ME_CONFIG_BASICAUTH_USERNAME: admin
+      ME_CONFIG_BASICAUTH_PASSWORD: admin123
+    networks:
+      - bigdata-network
+    depends_on:
+      - mongodb
+
+  # ==================== HUE ====================
+  hue:
+    image: gethue/hue:4.10.0
+    container_name: hue
+    hostname: hue
+    restart: always
+    ports:
+      - "8888:8888"
+    volumes:
+      - ./config/hue.ini:/usr/share/hue/desktop/conf/hue.ini
+    networks:
+      - bigdata-network
+    depends_on:
+      - hive-server
+      - namenode
+
+  # ==================== JUPYTER NOTEBOOK ====================
+  jupyter:
+    image: jupyter/pyspark-notebook:spark-3.1.1
+    container_name: jupyter
+    hostname: jupyter
+    restart: always
+    ports:
+      - "8889:8888"
+      - "4040:4040"
+    environment:
+      - JUPYTER_ENABLE_LAB=yes
+      - SPARK_MASTER=spark://spark-master:7077
+    volumes:
+      - ./notebooks:/home/jovyan/work
+      - ./data:/home/jovyan/data
+      - ./spark-apps:/home/jovyan/spark-apps
+    networks:
+      - bigdata-network
+    depends_on:
+      - spark-master
+
+networks:
+  bigdata-network:
+    driver: bridge
+
+volumes:
+  hadoop_namenode:
+  hadoop_datanode:
+  postgres_data:
+  mongodb_data:

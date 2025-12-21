@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+<configuration>
+    <!-- PostgreSQL Connection for Metastore -->
+    <property>
+        <name>javax.jdo.option.ConnectionURL</name>
+        <value>jdbc:postgresql://postgres-metastore:5432/metastore</value>
+        <description>JDBC connect string for a JDBC metastore</description>
+    </property>
+    
+    <property>
+        <name>javax.jdo.option.ConnectionDriverName</name>
+        <value>org.postgresql.Driver</value>
+        <description>Driver class name for a JDBC metastore</description>
+    </property>
+    
+    <property>
+        <name>javax.jdo.option.ConnectionUserName</name>
+        <value>hive</value>
+        <description>username to use against metastore database</description>
+    </property>
+    
+    <property>
+        <name>javax.jdo.option.ConnectionPassword</name>
+        <value>hive123</value>
+        <description>password to use against metastore database</description>
+    </property>
+    
+    <!-- Metastore URI -->
+    <property>
+        <name>hive.metastore.uris</name>
+        <value>thrift://hive-metastore:9083</value>
+        <description>Thrift URI for the remote metastore</description>
+    </property>
+    
+    <!-- Warehouse Directory -->
+    <property>
+        <name>hive.metastore.warehouse.dir</name>
+        <value>/user/hive/warehouse</value>
+        <description>location of default database for the warehouse</description>
+    </property>
+    
+    <!-- HiveServer2 Configuration -->
+    <property>
+        <name>hive.server2.enable.doAs</name>
+        <value>false</value>
+    </property>
+    
+    <property>
+        <name>hive.server2.thrift.port</name>
+        <value>10000</value>
+    </property>
+    
+    <property>
+        <name>hive.server2.thrift.bind.host</name>
+        <value>0.0.0.0</value>
+    </property>
+    
+    <property>
+        <name>hive.server2.authentication</name>
+        <value>NONE</value>
+    </property>
+    
+    <property>
+        <name>hive.server2.transport.mode</name>
+        <value>binary</value>
+    </property>
+    
+    <!-- Schema Verification -->
+    <property>
+        <name>datanucleus.schema.autoCreateAll</name>
+        <value>true</value>
+    </property>
+    
+    <property>
+        <name>hive.metastore.schema.verification</name>
+        <value>false</value>
+    </property>
+    
+    <!-- Performance Optimization -->
+    <property>
+        <name>hive.exec.dynamic.partition</name>
+        <value>true</value>
+    </property>
+    
+    <property>
+        <name>hive.exec.dynamic.partition.mode</name>
+        <value>nonstrict</value>
+    </property>
+    
+    <property>
+        <name>hive.support.concurrency</name>
+        <value>true</value>
+    </property>
+    
+    <!-- Timeout Settings - IMPORTANT -->
+    <property>
+        <name>hive.metastore.client.socket.timeout</name>
+        <value>600s</value>
+        <description>MetaStore Client socket timeout in seconds</description>
+    </property>
+    
+    <property>
+        <name>hive.metastore.client.connect.retry.delay</name>
+        <value>5s</value>
+    </property>
+    
+    <property>
+        <name>hive.server2.idle.operation.timeout</name>
+        <value>0</value>
+    </property>
+    
+    <property>
+        <name>hive.server2.idle.session.timeout</name>
+        <value>0</value>
+    </property>
+</configuration>
