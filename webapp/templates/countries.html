@@ -1,0 +1,135 @@
+{% extends 'base.html' %}
+
+{% block title %}Quoc Gia - Retail Analytics{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2><i class="bi bi-globe me-2"></i>Hieu Suat Theo Quoc Gia</h2>
+    <p class="text-muted mb-0">Phan tich doanh thu va khach hang theo tung quoc gia</p>
+</div>
+
+<div class="row mb-4">
+    <!-- Chart -->
+    <div class="col-md-8">
+        <div class="chart-container">
+            <h5 class="mb-3">Top 10 Quoc Gia Theo Doanh Thu</h5>
+            <canvas id="countryChart" height="200"></canvas>
+        </div>
+    </div>
+    
+    <!-- Summary -->
+    <div class="col-md-4">
+        <div class="card bg-primary text-white mb-3">
+            <div class="card-body">
+                <h6>Tong So Quoc Gia</h6>
+                <h2>{{ countries|length }}</h2>
+            </div>
+        </div>
+        <div class="card bg-success text-white mb-3">
+            <div class="card-body">
+                <h6>Tong Doanh Thu</h6>
+                <h2>${{ "%.0f"|format(countries|sum(attribute='TotalRevenue')) }}</h2>
+            </div>
+        </div>
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <h6>Tong Don Hang</h6>
+                <h2>{{ countries|sum(attribute='OrderCount') }}</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Country Table -->
+<div class="table-container">
+    <h5 class="mb-3"><i class="bi bi-table me-2"></i>Chi Tiet Theo Quoc Gia</h5>
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead class="table-light">
+                <tr>
+                    <th>#</th>
+                    <th>Quoc Gia</th>
+                    <th class="text-end">Doanh Thu</th>
+                    <th class="text-end">So Don</th>
+                    <th class="text-end">TB/Don</th>
+                    <th class="text-center">So Khach</th>
+                    <th>% Doanh Thu</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% set total_rev = countries|sum(attribute='TotalRevenue') %}
+                {% for country in countries %}
+                <tr>
+                    <td>
+                        {% if loop.index <= 3 %}
+                        <span class="badge bg-warning text-dark">{{ loop.index }}</span>
+                        {% else %}
+                        {{ loop.index }}
+                        {% endif %}
+                    </td>
+                    <td>
+                        <strong>{{ country._id or country.Country }}</strong>
+                        {% if loop.index == 1 %}
+                        <i class="bi bi-trophy-fill text-warning ms-1"></i>
+                        {% endif %}
+                    </td>
+                    <td class="text-end text-success">
+                        <strong>${{ "%.2f"|format(country.TotalRevenue or 0) }}</strong>
+                    </td>
+                    <td class="text-end">{{ country.OrderCount or 0 }}</td>
+                    <td class="text-end">
+                        ${{ "%.2f"|format((country.TotalRevenue or 0) / (country.OrderCount or 1)) }}
+                    </td>
+                    <td class="text-center">{{ country.CustomerCount or 'N/A' }}</td>
+                    <td>
+                        {% set pct = ((country.TotalRevenue or 0) / total_rev * 100) if total_rev > 0 else 0 %}
+                        <div class="d-flex align-items-center">
+                            <div class="progress flex-grow-1" style="height: 8px;">
+                                <div class="progress-bar bg-success" style="width: {{ pct }}%"></div>
+                            </div>
+                            <span class="ms-2 small">{{ "%.1f"|format(pct) }}%</span>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const countryData = {{ countries[:10]|safe }};
+
+new Chart(document.getElementById('countryChart'), {
+    type: 'bar',
+    data: {
+        labels: countryData.map(c => c._id || c.Country),
+        datasets: [{
+            label: 'Doanh Thu ($)',
+            data: countryData.map(c => c.TotalRevenue),
+            backgroundColor: [
+                '#3498db', '#2ecc71', '#e74c3c', '#f39c12', '#9b59b6',
+                '#1abc9c', '#34495e', '#e67e22', '#95a5a6', '#d35400'
+            ],
+            borderRadius: 5
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: { display: false }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    callback: value => '$' + value.toLocaleString()
+                }
+            }
+        }
+    }
+});
+</script>
+{% endblock %}

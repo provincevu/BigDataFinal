@@ -1,0 +1,155 @@
+{% extends 'base.html' %}
+
+{% block title %}Goi Y San Pham - Retail Analytics{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2><i class="bi bi-lightbulb me-2"></i>Goi Y San Pham</h2>
+    <p class="text-muted mb-0">Phan tich lien ket san pham va goi y dua tren Basket Analysis</p>
+</div>
+
+<div class="row">
+    <!-- Product Associations -->
+    <div class="col-md-6 mb-4">
+        <div class="table-container">
+            <h5 class="mb-3">
+                <i class="bi bi-link-45deg text-primary me-2"></i>
+                Lien Ket San Pham (Frequent Itemsets)
+            </h5>
+            <p class="small text-muted">San pham thuong duoc mua cung nhau</p>
+            
+            <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+                <table class="table table-hover table-sm">
+                    <thead class="table-light sticky-top">
+                        <tr>
+                            <th>San Pham 1</th>
+                            <th>San Pham 2</th>
+                            <th class="text-center">So Lan</th>
+                            <th class="text-center">Support</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for assoc in associations %}
+                        <tr>
+                            <td>
+                                <code>{{ assoc.StockCode1 or assoc.product1 or 'N/A' }}</code>
+                            </td>
+                            <td>
+                                <code>{{ assoc.StockCode2 or assoc.product2 or 'N/A' }}</code>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge bg-primary">{{ assoc.CoOccurrence or assoc.count or 0 }}</span>
+                            </td>
+                            <td class="text-center">
+                                {% if assoc.Support %}
+                                {{ "%.2f"|format(assoc.Support * 100) }}%
+                                {% else %}
+                                N/A
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Product Recommendations -->
+    <div class="col-md-6 mb-4">
+        <div class="table-container">
+            <h5 class="mb-3">
+                <i class="bi bi-stars text-warning me-2"></i>
+                Goi Y San Pham (Recommendations)
+            </h5>
+            <p class="small text-muted">Khi khach mua san pham A, goi y san pham B</p>
+            
+            <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+                <table class="table table-hover table-sm">
+                    <thead class="table-light sticky-top">
+                        <tr>
+                            <th>Neu Mua</th>
+                            <th><i class="bi bi-arrow-right"></i></th>
+                            <th>Goi Y</th>
+                            <th class="text-center">Confidence</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for rec in recommendations %}
+                        <tr>
+                            <td>
+                                <code>{{ rec.SourceProduct or rec.antecedent or rec.product1 or 'N/A' }}</code>
+                            </td>
+                            <td class="text-center text-success">
+                                <i class="bi bi-arrow-right-circle-fill"></i>
+                            </td>
+                            <td>
+                                <code>{{ rec.RecommendedProduct or rec.consequent or rec.product2 or 'N/A' }}</code>
+                            </td>
+                            <td class="text-center">
+                                {% if rec.Confidence %}
+                                <div class="progress" style="height: 20px; width: 80px;">
+                                    <div class="progress-bar bg-success" style="width: {{ rec.Confidence * 100 }}%">
+                                        {{ "%.0f"|format(rec.Confidence * 100) }}%
+                                    </div>
+                                </div>
+                                {% elif rec.score %}
+                                <span class="badge bg-success">{{ "%.2f"|format(rec.score) }}</span>
+                                {% else %}
+                                N/A
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- How it works -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-question-circle me-2"></i>Cach Thuc Hoat Dong</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="text-center mb-3">
+                            <i class="bi bi-cart3" style="font-size: 48px; color: #3498db;"></i>
+                        </div>
+                        <h6 class="text-center">1. Thu Thap Du Lieu</h6>
+                        <p class="small text-muted text-center">
+                            Phan tich lich su mua hang cua tat ca khach hang de tim cac san pham 
+                            thuong duoc mua cung nhau.
+                        </p>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-center mb-3">
+                            <i class="bi bi-cpu" style="font-size: 48px; color: #e74c3c;"></i>
+                        </div>
+                        <h6 class="text-center">2. Xu Ly Hadoop/Spark</h6>
+                        <p class="small text-muted text-center">
+                            Su dung Apache Spark de xu ly hang trieu giao dich va tim kiem 
+                            cac pattern mua hang.
+                        </p>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-center mb-3">
+                            <i class="bi bi-lightbulb" style="font-size: 48px; color: #27ae60;"></i>
+                        </div>
+                        <h6 class="text-center">3. Goi Y Thong Minh</h6>
+                        <p class="small text-muted text-center">
+                            Tao cac goi y san pham dua tren xac suat (confidence) 
+                            khach hang mua san pham lien quan.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

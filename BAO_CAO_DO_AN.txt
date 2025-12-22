@@ -1,0 +1,469 @@
+================================================================================
+                    BÁO CÁO ĐỒ ÁN MÔN HỌC
+                  BIG DATA RETAIL ANALYTICS
+        Hệ thống phân tích dữ liệu bán lẻ sử dụng Big Data
+================================================================================
+
+================================================================================
+                        MỤC LỤC
+================================================================================
+
+Chương 1: Tổng quan về đề tài
+    1.1 Giới thiệu
+    1.2 Mục tiêu của đề tài
+
+Chương 2: Cơ sở lý thuyết
+
+Chương 3: Thực nghiệm và kết quả
+
+Chương 4: Xây dựng website
+    4.1 Tổng quan hệ thống website
+    4.2 Công nghệ sử dụng
+    4.3 Sơ đồ luồng xử lý
+    4.4 Giao diện trang web
+    4.5 Hệ thống phím tắt
+
+Chương 5: Kết luận & Hướng phát triển
+    5.1 Kết luận
+    5.2 Hướng phát triển
+
+Chương 6: Tài liệu tham khảo
+
+================================================================================
+                CHƯƠNG 1: TỔNG QUAN VỀ ĐỀ TÀI
+================================================================================
+
+1.1 GIỚI THIỆU
+--------------
+
+Trong thời đại số hóa hiện nay, dữ liệu bán lẻ đóng vai trò quan trọng trong 
+việc hiểu hành vi khách hàng và đưa ra các quyết định kinh doanh thông minh. 
+Với sự phát triển của thương mại điện tử, lượng dữ liệu giao dịch tăng trưởng 
+theo cấp số nhân, đòi hỏi các giải pháp xử lý dữ liệu lớn (Big Data).
+
+Đề tài "Big Data Retail Analytics" xây dựng một hệ thống hoàn chỉnh để:
+- Thu thập và lưu trữ dữ liệu bán lẻ quy mô lớn
+- Xử lý và phân tích dữ liệu sử dụng các công nghệ Big Data
+- Phân khúc khách hàng dựa trên mô hình RFM (Recency, Frequency, Monetary)
+- Trực quan hóa kết quả phân tích qua giao diện web
+
+Dữ liệu được sử dụng: Online Retail Dataset từ UCI Machine Learning Repository
+- 541,909 giao dịch
+- 4,346 khách hàng
+- 38 quốc gia
+- Thời gian: 12/2010 - 12/2011
+
+
+1.2 MỤC TIÊU CỦA ĐỀ TÀI
+-----------------------
+
+Mục tiêu chính:
+1. Xây dựng hệ thống Big Data hoàn chỉnh sử dụng Docker
+2. Triển khai pipeline ETL (Extract-Transform-Load) với Apache Spark
+3. Phân tích và phân khúc khách hàng theo mô hình RFM
+4. Xây dựng dashboard trực quan hiển thị kết quả phân tích
+
+Mục tiêu cụ thể:
+- Làm sạch và xử lý 541,909 records dữ liệu giao dịch
+- Tính toán chỉ số RFM cho 4,346 khách hàng
+- Phân loại khách hàng thành 8 phân khúc
+- Phân tích doanh thu theo thời gian (tháng, ngày, giờ)
+- Xác định top sản phẩm bán chạy
+- Phân tích hiệu suất theo quốc gia
+
+
+================================================================================
+                CHƯƠNG 2: CƠ SỞ LÝ THUYẾT
+================================================================================
+
+2.1 BIG DATA VÀ CÁC CÔNG NGHỆ LIÊN QUAN
+---------------------------------------
+
+Big Data được định nghĩa bởi 3V:
+- Volume: Khối lượng dữ liệu lớn (terabytes, petabytes)
+- Velocity: Tốc độ sinh dữ liệu nhanh
+- Variety: Đa dạng loại dữ liệu (có cấu trúc, bán cấu trúc, phi cấu trúc)
+
+Các công nghệ Big Data sử dụng trong đề tài:
+
+a) Apache Hadoop:
+   - Hệ thống lưu trữ phân tán (HDFS - Hadoop Distributed File System)
+   - Cho phép lưu trữ dữ liệu lớn trên nhiều node
+   - Đảm bảo tính chịu lỗi (fault tolerance)
+
+b) Apache Spark:
+   - Framework xử lý dữ liệu lớn trong bộ nhớ
+   - Nhanh hơn MapReduce 100 lần
+   - Hỗ trợ nhiều ngôn ngữ: Python, Scala, Java, R
+   - Các module: Spark SQL, MLlib, GraphX, Streaming
+
+c) Apache Hive:
+   - Data warehouse cho Hadoop
+   - Cho phép truy vấn dữ liệu bằng HiveQL (tương tự SQL)
+   - Lưu trữ metadata trong Metastore
+
+d) MongoDB:
+   - Cơ sở dữ liệu NoSQL hướng document
+   - Lưu trữ dữ liệu dạng JSON/BSON
+   - Linh hoạt, dễ scale
+
+
+2.2 MÔ HÌNH RFM (RECENCY, FREQUENCY, MONETARY)
+----------------------------------------------
+
+RFM là mô hình phân khúc khách hàng dựa trên 3 chỉ số:
+
+- Recency (R): Thời gian kể từ lần mua hàng gần nhất
+  + R thấp = Khách hàng mua gần đây → Tốt
+  + R cao = Khách hàng lâu không mua → Cần chú ý
+
+- Frequency (F): Tần suất mua hàng
+  + F cao = Khách hàng mua thường xuyên → Trung thành
+  + F thấp = Khách hàng ít mua → Cần kích hoạt
+
+- Monetary (M): Tổng giá trị chi tiêu
+  + M cao = Khách hàng giá trị cao → VIP
+  + M thấp = Khách hàng chi tiêu ít → Tiềm năng
+
+Cách tính điểm RFM (1-5 scale):
+- Chia khách hàng thành 5 nhóm theo từng chỉ số
+- Sử dụng NTILE hoặc percentile ranking
+- Điểm RFM tổng = R_Score + F_Score + M_Score (3-15)
+
+
+2.3 PHÂN KHÚC KHÁCH HÀNG
+------------------------
+
+Dựa trên điểm RFM, khách hàng được phân thành 8 phân khúc:
+
++-------------------+------------+--------------------------------------+
+| Phân khúc         | Điều kiện  | Đặc điểm                             |
++-------------------+------------+--------------------------------------+
+| Champions         | R,F,M >= 4 | Mua gần đây, thường xuyên, chi nhiều |
+| Loyal Customers   | R,F,M >= 3 | Khách hàng trung thành               |
+| New Customers     | R>=4, F<=2 | Khách hàng mới                       |
+| At Risk           | R<=2, F>=3 | Từng trung thành, có nguy cơ rời bỏ  |
+| Big Spenders      | M >= 4     | Chi tiêu lớn                         |
+| Regular           | Trung bình | Khách hàng thông thường              |
+| Hibernating       | R thấp     | Khách hàng ngủ đông                  |
+| Lost Customers    | R,F,M <=2  | Đã mất khách hàng                    |
++-------------------+------------+--------------------------------------+
+
+
+================================================================================
+                CHƯƠNG 3: THỰC NGHIỆM VÀ KẾT QUẢ
+================================================================================
+
+3.1 MÔI TRƯỜNG THỰC NGHIỆM
+--------------------------
+
+Hệ thống được triển khai trên Docker với 12 containers:
+
++--------------------+--------+---------------------------+
+| Service            | Port   | Chức năng                 |
++--------------------+--------+---------------------------+
+| namenode           | 9870   | HDFS NameNode             |
+| datanode           | 9864   | HDFS DataNode             |
+| postgres-metastore | 5432   | PostgreSQL Metastore      |
+| hive-metastore     | 9083   | Hive Metastore            |
+| hive-server        | 10000  | HiveServer2               |
+| spark-master       | 8580   | Spark Master              |
+| spark-worker       | 8581   | Spark Worker              |
+| mongodb            | 27017  | MongoDB                   |
+| mongo-express      | 8290   | MongoDB UI                |
+| hue                | 8788   | Hue Interface             |
+| jupyter            | 8889   | Jupyter Notebook          |
+| webapp             | 5000   | Flask Web Application     |
++--------------------+--------+---------------------------+
+
+
+3.2 QUY TRÌNH XỬ LÝ DỮ LIỆU
+---------------------------
+
+Bước 1: Load dữ liệu
+- Đọc file CSV: online_retail.csv
+- Số records gốc: 541,909
+
+Bước 2: Làm sạch dữ liệu
+- Loại bỏ CustomerID null
+- Loại bỏ Quantity <= 0
+- Loại bỏ UnitPrice <= 0
+- Loại bỏ đơn hàng hủy (InvoiceNo bắt đầu bằng 'C')
+- Số records sau làm sạch: 397,884 (giảm 26.6%)
+
+Bước 3: Tính toán features
+- TotalAmount = Quantity × UnitPrice
+- Year, Month, DayOfWeek, Hour từ InvoiceDate
+- RFM metrics cho từng khách hàng
+
+Bước 4: Lưu trữ kết quả
+- HDFS: Dữ liệu Parquet cho phân tích sau
+- MongoDB: Kết quả phân tích cho web display
+
+
+3.3 KẾT QUẢ PHÂN TÍCH
+---------------------
+
+a) Thống kê tổng quan:
+   - Tổng records: 397,884
+   - Tổng khách hàng: 4,346
+   - Tổng doanh thu: £8,911,407.90
+   - Số quốc gia: 37
+
+b) Phân khúc khách hàng:
+
++-------------------+-------+-------------+---------------+
+| Segment           | Số KH | Avg Monetary| Total Revenue |
++-------------------+-------+-------------+---------------+
+| Champions         | 549   | £8,504.56   | £4,669,001    |
+| Big Spenders      | 228   | £4,679.31   | £1,066,882    |
+| Lost Customers    | 772   | £954.93     | £737,208      |
+| At Risk           | 150   | £3,248.84   | £487,325      |
+| New Customers     | 321   | £1,366.79   | £438,738      |
+| Loyal Customers   | 263   | £1,265.28   | £332,769      |
+| Hibernating       | 228   | £1,300.53   | £296,521      |
+| Regular           | 334   | £798.35     | £266,648      |
++-------------------+-------+-------------+---------------+
+
+c) Nhận xét:
+   - Champions chiếm 12.6% khách hàng nhưng đóng góp 52.4% doanh thu
+   - Lost Customers chiếm 17.8% - cần chiến lược win-back
+   - New Customers (7.4%) - cơ hội phát triển
+
+
+3.4 HIỆU NĂNG HỆ THỐNG
+----------------------
+
+- Thời gian ETL: ~2-5 phút
+- Thời gian Clustering: ~1-2 phút
+- Thời gian load trang web: < 1 giây
+- Memory usage: ~6GB (Docker containers)
+
+
+================================================================================
+                CHƯƠNG 4: XÂY DỰNG WEBSITE
+================================================================================
+
+4.1 TỔNG QUAN HỆ THỐNG WEBSITE
+------------------------------
+
+Website được xây dựng với kiến trúc:
+
+    [Browser] --> [Flask App] --> [MongoDB] --> [Data từ Spark]
+                      |
+                      v
+                [Templates HTML]
+
+Các trang chính:
+- Dashboard: Tổng quan hệ thống
+- Customers: Danh sách khách hàng RFM
+- Products: Top sản phẩm bán chạy
+- Revenue: Phân tích doanh thu
+- Segments: Phân khúc khách hàng
+- Countries: Phân tích theo quốc gia
+
+
+4.2 CÔNG NGHỆ SỬ DỤNG
+---------------------
+
++---------------+---------+-----------------------------------+
+| Công nghệ     | Version | Mục đích                          |
++---------------+---------+-----------------------------------+
+| Flask         | 2.3.3   | Python web framework              |
+| Jinja2        | 3.1.2   | Template engine                   |
+| PyMongo       | 4.5.0   | MongoDB driver cho Python         |
+| Bootstrap     | 5.x     | CSS framework                     |
+| Chart.js      | -       | Thư viện biểu đồ (nếu có)         |
+| Docker        | 20.10+  | Containerization                  |
++---------------+---------+-----------------------------------+
+
+
+4.3 SƠ ĐỒ LUỒNG XỬ LÝ
+---------------------
+
+1. Upload Data:
+   CSV File --> HDFS (/user/retail/)
+
+2. ETL Pipeline:
+   HDFS --> Spark --> Clean & Transform --> MongoDB
+
+3. Clustering:
+   HDFS --> Spark --> RFM Calculation --> Segmentation --> MongoDB
+
+4. Web Display:
+   User Request --> Flask --> MongoDB Query --> Template Render --> Response
+
+
+4.4 GIAO DIỆN TRANG WEB
+-----------------------
+
+a) Trang Dashboard (http://localhost:5000/)
+   - Hiển thị tổng quan: số khách hàng, doanh thu, số giao dịch
+   - Biểu đồ phân bố phân khúc
+   - Quick links đến các trang khác
+
+b) Trang Customers (http://localhost:5000/customers)
+   - Bảng danh sách khách hàng
+   - Cột: CustomerID, Country, Recency, Frequency, Monetary, Segment
+   - Có thể click vào từng khách hàng để xem chi tiết
+
+c) Trang Products (http://localhost:5000/products)
+   - Top 20 sản phẩm theo số lượng bán
+   - Top 20 sản phẩm theo doanh thu
+   - Cột: StockCode, Description, Quantity, Revenue
+
+d) Trang Revenue (http://localhost:5000/revenue)
+   - Doanh thu theo tháng
+   - Doanh thu theo ngày trong tuần
+   - Doanh thu theo giờ
+
+e) Trang Segments (http://localhost:5000/segments)
+   - Thống kê 8 phân khúc khách hàng
+   - Số lượng, Avg Monetary, Avg Frequency, Total Revenue
+
+f) Trang Countries (http://localhost:5000/countries)
+   - Phân tích theo 37 quốc gia
+   - Doanh thu, số khách hàng, số giao dịch
+
+
+4.5 HỆ THỐNG PHÍM TẮT
+---------------------
+
+Website hiện tại chưa triển khai hệ thống phím tắt.
+
+Đề xuất cho phát triển tương lai:
+- Ctrl + D: Về Dashboard
+- Ctrl + C: Trang Customers
+- Ctrl + P: Trang Products
+- Ctrl + R: Trang Revenue
+- Ctrl + S: Trang Segments
+- ESC: Đóng modal/popup
+
+
+================================================================================
+            CHƯƠNG 5: KẾT LUẬN & HƯỚNG PHÁT TRIỂN
+================================================================================
+
+5.1 KẾT LUẬN
+------------
+
+Đề tài đã hoàn thành các mục tiêu đề ra:
+
+✓ Xây dựng hệ thống Big Data hoàn chỉnh với Docker (12 services)
+✓ Triển khai ETL Pipeline xử lý 541,909 records
+✓ Phân tích RFM cho 4,346 khách hàng
+✓ Phân loại thành 8 phân khúc khách hàng
+✓ Xây dựng dashboard web hiển thị kết quả
+
+Kết quả phân tích có giá trị thực tiễn:
+- Xác định nhóm khách hàng giá trị cao (Champions)
+- Phát hiện khách hàng có nguy cơ rời bỏ (At Risk, Lost)
+- Cung cấp insights cho chiến lược marketing
+
+
+5.2 HƯỚNG PHÁT TRIỂN
+--------------------
+
+Ngắn hạn:
+1. Thêm chức năng Product Recommendation (Gợi ý sản phẩm)
+2. Cải thiện giao diện web với biểu đồ tương tác
+3. Thêm chức năng export báo cáo PDF/Excel
+4. Triển khai hệ thống phím tắt
+
+Trung hạn:
+5. Tích hợp Real-time streaming với Kafka
+6. Thêm Machine Learning để dự đoán churn
+7. Xây dựng REST API cho tích hợp hệ thống khác
+8. Thêm authentication và authorization
+
+Dài hạn:
+9. Triển khai trên cloud (AWS/GCP/Azure)
+10. Horizontal scaling cho xử lý dữ liệu lớn hơn
+11. Tích hợp với hệ thống CRM thực tế
+12. Xây dựng mobile application
+
+
+================================================================================
+                CHƯƠNG 6: TÀI LIỆU THAM KHẢO
+================================================================================
+
+[1] Apache Spark Documentation
+    https://spark.apache.org/docs/latest/
+
+[2] Apache Hadoop Documentation
+    https://hadoop.apache.org/docs/
+
+[3] MongoDB Documentation
+    https://docs.mongodb.com/
+
+[4] Flask Documentation
+    https://flask.palletsprojects.com/
+
+[5] RFM Analysis - Wikipedia
+    https://en.wikipedia.org/wiki/RFM_(market_research)
+
+[6] UCI Machine Learning Repository - Online Retail Dataset
+    https://archive.ics.uci.edu/ml/datasets/Online+Retail
+
+[7] Docker Documentation
+    https://docs.docker.com/
+
+[8] Python PySpark Documentation
+    https://spark.apache.org/docs/latest/api/python/
+
+[9] Jinja2 Template Documentation
+    https://jinja.palletsprojects.com/
+
+
+================================================================================
+                            PHỤ LỤC
+================================================================================
+
+A. HƯỚNG DẪN CÀI ĐẶT VÀ CHẠY
+----------------------------
+
+1. Yêu cầu hệ thống:
+   - Docker Desktop 20.10+
+   - RAM: 8GB (khuyến nghị 16GB)
+   - Disk: 10GB trống
+
+2. Các bước chạy:
+   
+   # Khởi động hệ thống
+   start.bat
+   
+   # Đợi 3-5 phút, sau đó upload data
+   upload-data.bat
+   
+   # Chạy ETL
+   run-etl.bat
+   
+   # Chạy Clustering
+   run-clustering.bat
+   
+   # Mở web browser
+   http://localhost:5000
+
+
+B. DANH SÁCH MONGODB COLLECTIONS
+--------------------------------
+
++----------------------+--------+---------------------------+
+| Collection           | Count  | Mô tả                     |
++----------------------+--------+---------------------------+
+| customer_rfm         | 4,346  | RFM analysis              |
+| customer_clusters    | 2,845  | Cluster assignments       |
+| cluster_statistics   | 8      | Segment stats             |
+| transactions         | 10,000 | Sample transactions       |
+| country_performance  | 37     | Country stats             |
+| monthly_revenue      | 13     | Monthly revenue           |
+| daily_revenue        | 6      | Daily revenue             |
+| hourly_revenue       | 15     | Hourly revenue            |
+| top_products_quantity| 20     | Top products by qty       |
+| top_products_revenue | 20     | Top products by revenue   |
++----------------------+--------+---------------------------+
+
+
+================================================================================
+                        HẾT BÁO CÁO
+================================================================================

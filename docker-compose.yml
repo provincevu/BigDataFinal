@@ -1,15 +1,12 @@
-version: "3.8"
-
 services:
   # ==================== HADOOP CLUSTER ====================
   namenode:
     image: bde2020/hadoop-namenode:2.0.0-hadoop3.2.1-java8
     container_name: namenode
-    hostname: namenode
-    restart: always
+    restart: unless-stopped
     ports:
-      - "9870:9870" # HDFS Web UI
-      - "9000:9000" # HDFS IPC
+      - "9870:9870"
+      - "9000:9000"
     volumes:
       - hadoop_namenode:/hadoop/dfs/name
       - ./data:/data
@@ -23,16 +20,15 @@ services:
   datanode:
     image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
     container_name: datanode
-    hostname: datanode
-    restart: always
+    restart: unless-stopped
     ports:
-      - "9864:9864" # DataNode Web UI
-    volumes:
-      - hadoop_datanode:/hadoop/dfs/data
+      - "9864:9864"
     environment:
       SERVICE_PRECONDITION: "namenode:9870"
     env_file:
       - ./config/hadoop.env
+    volumes:
+      - hadoop_datanode:/hadoop/dfs/data
     networks:
       - bigdata-network
     depends_on:
@@ -40,28 +36,28 @@ services:
 
   # ==================== HIVE ====================
   postgres-metastore:
-    image: postgres:9.5
+    image: postgres:11-alpine
     container_name: postgres-metastore
-    hostname: postgres-metastore
-    restart: always
-    ports:
-      - "5432:5432"
+    restart: unless-stopped
     environment:
       POSTGRES_DB: metastore
       POSTGRES_USER: hive
       POSTGRES_PASSWORD: hive123
+    command: ["postgres", "-c", "password_encryption=md5"]
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - bigdata-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hive -d metastore"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   hive-metastore:
     image: bde2020/hive:2.3.2-postgresql-metastore
     container_name: hive-metastore
-    hostname: hive-metastore
-    restart: always
-    env_file:
-      - ./config/hadoop.env
+    restart: unless-stopped
     command: /opt/hive/bin/hive --service metastore
     environment:
       SERVICE_PRECONDITION: "namenode:9870 datanode:9864 postgres-metastore:5432"
@@ -72,19 +68,18 @@ services:
     networks:
       - bigdata-network
     depends_on:
-      - namenode
-      - datanode
-      - postgres-metastore
+      postgres-metastore:
+        condition: service_healthy
+      namenode:
+        condition: service_started
+      datanode:
+        condition: service_started
 
   hive-server:
     image: bde2020/hive:2.3.2-postgresql-metastore
     container_name: hive-server
-    hostname: hive-server
-    restart: always
-    env_file:
-      - ./config/hadoop.env
+    restart: unless-stopped
     environment:
-      HIVE_CORE_CONF_javax_jdo_option_ConnectionURL: "jdbc:postgresql://postgres-metastore/metastore"
       SERVICE_PRECONDITION: "hive-metastore:9083"
     ports:
       - "10000:10000"
@@ -98,13 +93,12 @@ services:
 
   # ==================== SPARK ====================
   spark-master:
-    image: bde2020/spark-master:3.1.1-hadoop3.2
+    image: bde2020/spark-master:3.3.0-hadoop3.3
     container_name: spark-master
-    hostname: spark-master
-    restart: always
+    restart: unless-stopped
     ports:
-      - "8080:8080" # Spark Master Web UI
-      - "7077:7077" # Spark Master Port
+      - "8580:8080"
+      - "7777:7077"
     environment:
       - INIT_DAEMON_STEP=setup_spark
     volumes:
@@ -116,18 +110,18 @@ services:
     depends_on:
       - namenode
       - datanode
+      - hive-metastore
 
   spark-worker:
-    image: bde2020/spark-worker:3.1.1-hadoop3.2
+    image: bde2020/spark-worker:3.3.0-hadoop3.3
     container_name: spark-worker
-    hostname: spark-worker
-    restart: always
-    ports:
-      - "8081:8081" # Spark Worker Web UI
+    restart: unless-stopped
     environment:
       - SPARK_MASTER=spark://spark-master:7077
       - SPARK_WORKER_CORES=2
       - SPARK_WORKER_MEMORY=2G
+    ports:
+      - "8581:8081"
     volumes:
       - ./spark-apps:/spark-apps
       - ./data:/data
@@ -140,8 +134,7 @@ services:
   mongodb:
     image: mongo:6.0
     container_name: mongodb
-    hostname: mongodb
-    restart: always
+    restart: unless-stopped
     ports:
       - "27017:27017"
     environment:
@@ -153,34 +146,43 @@ services:
       - ./mongo-init:/docker-entrypoint-initdb.d
     networks:
       - bigdata-network
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/admin --quiet
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
 
   mongo-express:
-    image: mongo-express:1.0.0-alpha
+    image: mongo-express:1.0.2-20-alpine3.19
     container_name: mongo-express
-    restart: always
+    restart: unless-stopped
     ports:
-      - "8082:8081"
+      - "8290:8081"
     environment:
       ME_CONFIG_MONGODB_ADMINUSERNAME: admin
       ME_CONFIG_MONGODB_ADMINPASSWORD: admin123
       ME_CONFIG_MONGODB_URL: mongodb://admin:admin123@mongodb:27017/
+      ME_CONFIG_MONGODB_SERVER: mongodb
       ME_CONFIG_BASICAUTH_USERNAME: admin
       ME_CONFIG_BASICAUTH_PASSWORD: admin123
     networks:
       - bigdata-network
     depends_on:
-      - mongodb
+      mongodb:
+        condition: service_started
 
   # ==================== HUE ====================
   hue:
     image: gethue/hue:4.10.0
     container_name: hue
-    hostname: hue
-    restart: always
+    restart: unless-stopped
     ports:
-      - "8888:8888"
+      - "8788:8888"
     volumes:
       - ./config/hue.ini:/usr/share/hue/desktop/conf/hue.ini
+      - ./hue-logs:/var/log/hue
+      - hue_data:/usr/share/hue/desktop
     networks:
       - bigdata-network
     depends_on:
@@ -189,13 +191,12 @@ services:
 
   # ==================== JUPYTER NOTEBOOK ====================
   jupyter:
-    image: jupyter/pyspark-notebook:spark-3.1.1
+    image: jupyter/pyspark-notebook:spark-3.3.0
     container_name: jupyter
-    hostname: jupyter
-    restart: always
+    restart: unless-stopped
     ports:
       - "8889:8888"
-      - "4040:4040"
+      - "4040-4045:4040-4045"
     environment:
       - JUPYTER_ENABLE_LAB=yes
       - SPARK_MASTER=spark://spark-master:7077
@@ -207,6 +208,29 @@ services:
       - bigdata-network
     depends_on:
       - spark-master
+      - hive-metastore
+
+  # ==================== PYTHON WEB APPLICATION ====================
+  webapp:
+    build:
+      context: ./webapp
+      dockerfile: Dockerfile
+    container_name: webapp
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      - MONGO_URI=mongodb://admin:admin123@mongodb:27017/?authSource=admin
+      - FLASK_ENV=production
+    networks:
+      - bigdata-network
+    depends_on:
+      - mongodb
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
 networks:
   bigdata-network:
@@ -217,3 +241,5 @@ volumes:
   hadoop_datanode:
   postgres_data:
   mongodb_data:
+  hue_data:
+  

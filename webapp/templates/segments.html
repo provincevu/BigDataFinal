@@ -1,0 +1,187 @@
+{% extends 'base.html' %}
+
+{% block title %}Phan Khuc - Retail Analytics{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2><i class="bi bi-diagram-3 me-2"></i>Phan Tich Phan Khuc Khach Hang</h2>
+    <p class="text-muted mb-0">Phan khuc dua tren phan tich RFM (Recency, Frequency, Monetary)</p>
+</div>
+
+<div class="row mb-4">
+    <!-- Pie Chart -->
+    <div class="col-md-5">
+        <div class="chart-container">
+            <h5 class="mb-3">Phan Bo Khach Hang</h5>
+            <canvas id="segmentPie" height="300"></canvas>
+        </div>
+    </div>
+    
+    <!-- Segment Cards -->
+    <div class="col-md-7">
+        <div class="row">
+            {% for seg in segment_counts %}
+            <div class="col-md-6 mb-3">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                {% set seg_name = seg._id %}
+                                {% set seg_class = seg_name|lower|replace(' ', '-') if seg_name else 'regular' %}
+                                <span class="segment-badge segment-{{ seg_class }}">{{ seg_name }}</span>
+                                <h3 class="mt-2 mb-0">{{ seg.count }}</h3>
+                                <small class="text-muted">khach hang</small>
+                            </div>
+                            <div class="text-end">
+                                {% set pct = (seg.count / segment_counts|sum(attribute='count') * 100)|round(1) %}
+                                <span class="h4 text-primary">{{ pct }}%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Segment Statistics Table -->
+<div class="row">
+    <div class="col-12">
+        <div class="table-container">
+            <h5 class="mb-3"><i class="bi bi-bar-chart me-2"></i>Thong Ke Chi Tiet Theo Phan Khuc</h5>
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Phan Khuc</th>
+                            <th class="text-center">So Khach</th>
+                            <th class="text-center">Avg Recency</th>
+                            <th class="text-center">Avg Frequency</th>
+                            <th class="text-end">Avg Monetary</th>
+                            <th class="text-end">Tong Doanh Thu</th>
+                            <th class="text-center">% Doanh Thu</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% set total_revenue = segment_stats|sum(attribute='TotalRevenue') %}
+                        {% for seg in segment_stats %}
+                        <tr>
+                            <td>
+                                {% set seg_name = seg.Segment or 'Cluster ' ~ seg.Cluster %}
+                                {% set seg_class = seg_name|lower|replace(' ', '-') if seg.Segment else 'regular' %}
+                                <span class="segment-badge segment-{{ seg_class }}">{{ seg_name }}</span>
+                            </td>
+                            <td class="text-center">{{ seg.CustomerCount }}</td>
+                            <td class="text-center">{{ "%.1f"|format(seg.AvgRecency or 0) }} ngay</td>
+                            <td class="text-center">{{ "%.1f"|format(seg.AvgFrequency or 0) }} lan</td>
+                            <td class="text-end">${{ "%.2f"|format(seg.AvgMonetary or 0) }}</td>
+                            <td class="text-end text-success">
+                                <strong>${{ "%.2f"|format(seg.TotalRevenue or 0) }}</strong>
+                            </td>
+                            <td class="text-center">
+                                {% set pct = ((seg.TotalRevenue or 0) / total_revenue * 100) if total_revenue > 0 else 0 %}
+                                <div class="progress" style="height: 20px;">
+                                    <div class="progress-bar bg-success" style="width: {{ pct }}%">
+                                        {{ "%.1f"|format(pct) }}%
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Segment Descriptions -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>Mo Ta Cac Phan Khuc</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <span class="segment-badge segment-champions">Champions</span>
+                            <p class="mt-2 mb-0 small">Khach hang VIP - mua gan day, thuong xuyen, chi tieu cao. Uu tien giu chan.</p>
+                        </div>
+                        <div class="mb-3">
+                            <span class="segment-badge segment-loyal">Loyal Customers</span>
+                            <p class="mt-2 mb-0 small">Khach hang trung thanh - mua thuong xuyen. Khich le chi tieu them.</p>
+                        </div>
+                        <div class="mb-3">
+                            <span class="segment-badge segment-big-spenders">Big Spenders</span>
+                            <p class="mt-2 mb-0 small">Chi tieu lon nhung it mua. Tang tan suat mua hang.</p>
+                        </div>
+                        <div class="mb-3">
+                            <span class="segment-badge segment-new">New Customers</span>
+                            <p class="mt-2 mb-0 small">Khach hang moi. Cham soc de chuyen thanh Loyal.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <span class="segment-badge segment-regular">Regular</span>
+                            <p class="mt-2 mb-0 small">Khach hang binh thuong. Can chien luoc nang cap.</p>
+                        </div>
+                        <div class="mb-3">
+                            <span class="segment-badge segment-at-risk">At Risk</span>
+                            <p class="mt-2 mb-0 small">Truoc day la khach tot nhung lau khong mua. Can win-back.</p>
+                        </div>
+                        <div class="mb-3">
+                            <span class="segment-badge segment-hibernating">Hibernating</span>
+                            <p class="mt-2 mb-0 small">Tam nghi mua hang. Gui offer dac biet de kich hoat.</p>
+                        </div>
+                        <div class="mb-3">
+                            <span class="segment-badge segment-lost">Lost Customers</span>
+                            <p class="mt-2 mb-0 small">Da mat. Co the thu tai kich hoat voi chi phi thap.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const segmentData = {{ segment_counts|safe }};
+const colors = {
+    'Champions': '#FFD700',
+    'Loyal Customers': '#4CAF50',
+    'Big Spenders': '#2196F3',
+    'New Customers': '#9C27B0',
+    'Regular': '#607D8B',
+    'At Risk': '#FF9800',
+    'Hibernating': '#795548',
+    'Lost Customers': '#F44336'
+};
+
+new Chart(document.getElementById('segmentPie'), {
+    type: 'doughnut',
+    data: {
+        labels: segmentData.map(s => s._id),
+        datasets: [{
+            data: segmentData.map(s => s.count),
+            backgroundColor: segmentData.map(s => colors[s._id] || '#999'),
+            borderWidth: 2,
+            borderColor: '#fff'
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                position: 'bottom',
+                labels: { padding: 15 }
+            }
+        }
+    }
+});
+</script>
+{% endblock %}

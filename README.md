@@ -50,7 +50,7 @@ Xây dựng một **Data Pipeline** hoàn chỉnh để phân tích dữ liệu 
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                           USER INTERFACE                                 │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐ │
-│  │   Hue:8888   │  │ Jupyter:8889 │  │  HDFS:9870   │  │ Spark:8080   │ │
+│  │   Hue:8788   │  │ Jupyter:8889 │  │  HDFS:9870   │  │ Spark:8580   │ │
 │  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘ │
 └─────────┼─────────────────┼─────────────────┼─────────────────┼─────────┘
           │                 │                 │                 │
@@ -225,7 +225,7 @@ docker-compose logs -f hive-metastore
 
 ### 🎯 Cách 3: Sử Dụng Hue (SQL Queries)
 
-1. **Mở trình duyệt**: http://localhost:8888
+1. **Mở trình duyệt**: http://localhost:8788
 2. **Tạo tài khoản**: Lần đầu tự tạo (admin/admin)
 3. **Vào Query Editor**: Chọn Hive
 4. **Chạy queries**: Sử dụng các query trong `hive-queries/retail_analytics.sql`
@@ -438,15 +438,15 @@ Notebook phân tích trực tiếp bằng Pandas (không cần Spark):
 
 ## 🌐 TRUY CẬP SERVICES
 
-| Service                 | URL                   | Đăng nhập                |
+| Service                 | URL                   | Dang nhap                |
 | ----------------------- | --------------------- | ------------------------ |
-| 📊 **Jupyter Notebook** | http://localhost:8889 | Token: `bigdata2024`     |
-| 🗂️ **HDFS NameNode**    | http://localhost:9870 | Không cần                |
-| ⚡ **Spark Master UI**  | http://localhost:8080 | Không cần                |
-| 🔍 **Hue**              | http://localhost:8888 | Tạo lần đầu: admin/admin |
-| 🍃 **Mongo Express**    | http://localhost:8082 | admin / admin123         |
-| 📦 **HDFS DataNode**    | http://localhost:9864 | Không cần                |
-| 🔧 **Spark Worker**     | http://localhost:8081 | Không cần                |
+| :chart_with_upwards_trend: **Jupyter Notebook** | http://localhost:8889 | Token: xem docker logs jupyter |
+| :file_folder: **HDFS NameNode**    | http://localhost:9870 | Khong can                |
+| :zap: **Spark Master UI**  | http://localhost:8580 | Khong can                |
+| :mag: **Hue**              | http://localhost:8788 | Tao lan dau: admin/admin |
+| :leaves: **Mongo Express**    | http://localhost:8290 | admin / admin123         |
+| :package: **HDFS DataNode**    | http://localhost:9864 | Khong can                |
+| :wrench: **Spark Worker**     | http://localhost:8581 | Khong can                |
 
 ---
 

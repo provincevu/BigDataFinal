@@ -1,0 +1,151 @@
+{% extends 'base.html' %}
+
+{% block title %}San Pham - Retail Analytics{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2><i class="bi bi-box-seam me-2"></i>San Pham Ban Chay</h2>
+    <p class="text-muted mb-0">Du lieu phan tich tu Hadoop/Spark</p>
+</div>
+
+<div class="row">
+    <!-- Top by Revenue -->
+    <div class="col-md-6 mb-4">
+        <div class="table-container">
+            <h5 class="mb-3"><i class="bi bi-currency-dollar text-success me-2"></i>Top Theo Doanh Thu</h5>
+            <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+                <table class="table table-hover table-sm">
+                    <thead class="table-light sticky-top">
+                        <tr>
+                            <th>#</th>
+                            <th>Ma SP</th>
+                            <th>Ten San Pham</th>
+                            <th class="text-end">Doanh Thu</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for product in top_revenue %}
+                        <tr>
+                            <td>
+                                {% if loop.index <= 3 %}
+                                <span class="badge bg-warning text-dark">{{ loop.index }}</span>
+                                {% else %}
+                                {{ loop.index }}
+                                {% endif %}
+                            </td>
+                            <td><code>{{ product.StockCode }}</code></td>
+                            <td>{{ product.Description[:35] if product.Description else 'N/A' }}{% if product.Description and product.Description|length > 35 %}...{% endif %}</td>
+                            <td class="text-end text-success">
+                                <strong>${{ "%.2f"|format(product.TotalRevenue or 0) }}</strong>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Top by Quantity -->
+    <div class="col-md-6 mb-4">
+        <div class="table-container">
+            <h5 class="mb-3"><i class="bi bi-box text-primary me-2"></i>Top Theo So Luong</h5>
+            <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+                <table class="table table-hover table-sm">
+                    <thead class="table-light sticky-top">
+                        <tr>
+                            <th>#</th>
+                            <th>Ma SP</th>
+                            <th>Ten San Pham</th>
+                            <th class="text-end">So Luong</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for product in top_quantity %}
+                        <tr>
+                            <td>
+                                {% if loop.index <= 3 %}
+                                <span class="badge bg-primary">{{ loop.index }}</span>
+                                {% else %}
+                                {{ loop.index }}
+                                {% endif %}
+                            </td>
+                            <td><code>{{ product.StockCode }}</code></td>
+                            <td>{{ product.Description[:35] if product.Description else 'N/A' }}{% if product.Description and product.Description|length > 35 %}...{% endif %}</td>
+                            <td class="text-end text-primary">
+                                <strong>{{ product.TotalQuantity or 0 }}</strong>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts -->
+<div class="row">
+    <div class="col-md-6 mb-4">
+        <div class="chart-container">
+            <h5 class="mb-3">Top 10 Theo Doanh Thu</h5>
+            <canvas id="revenueChart" height="300"></canvas>
+        </div>
+    </div>
+    <div class="col-md-6 mb-4">
+        <div class="chart-container">
+            <h5 class="mb-3">Top 10 Theo So Luong</h5>
+            <canvas id="quantityChart" height="300"></canvas>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const revenueData = {{ top_revenue[:10]|safe }};
+const quantityData = {{ top_quantity[:10]|safe }};
+
+// Revenue Chart
+new Chart(document.getElementById('revenueChart'), {
+    type: 'bar',
+    data: {
+        labels: revenueData.map(p => p.StockCode),
+        datasets: [{
+            label: 'Doanh Thu ($)',
+            data: revenueData.map(p => p.TotalRevenue),
+            backgroundColor: '#27ae60',
+            borderRadius: 5
+        }]
+    },
+    options: {
+        indexAxis: 'y',
+        responsive: true,
+        plugins: {
+            legend: { display: false }
+        }
+    }
+});
+
+// Quantity Chart
+new Chart(document.getElementById('quantityChart'), {
+    type: 'bar',
+    data: {
+        labels: quantityData.map(p => p.StockCode),
+        datasets: [{
+            label: 'So Luong',
+            data: quantityData.map(p => p.TotalQuantity),
+            backgroundColor: '#3498db',
+            borderRadius: 5
+        }]
+    },
+    options: {
+        indexAxis: 'y',
+        responsive: true,
+        plugins: {
+            legend: { display: false }
+        }
+    }
+});
+</script>
+{% endblock %}

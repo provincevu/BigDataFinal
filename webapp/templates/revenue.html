@@ -1,0 +1,169 @@
+{% extends 'base.html' %}
+
+{% block title %}Doanh Thu - Retail Analytics{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2><i class="bi bi-currency-dollar me-2"></i>Phan Tich Doanh Thu</h2>
+    <p class="text-muted mb-0">Du lieu doanh thu theo thoi gian</p>
+</div>
+
+<!-- Monthly Revenue Chart -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="chart-container">
+            <h5 class="mb-3"><i class="bi bi-calendar3 me-2"></i>Doanh Thu Theo Thang</h5>
+            <canvas id="monthlyChart" height="100"></canvas>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <!-- Hourly Pattern -->
+    <div class="col-md-6">
+        <div class="chart-container">
+            <h5 class="mb-3"><i class="bi bi-clock me-2"></i>Doanh Thu Theo Gio Trong Ngay</h5>
+            <canvas id="hourlyChart" height="200"></canvas>
+        </div>
+    </div>
+    
+    <!-- Daily Trend -->
+    <div class="col-md-6">
+        <div class="chart-container">
+            <h5 class="mb-3"><i class="bi bi-graph-up me-2"></i>Xu Huong 30 Ngay Gan Nhat</h5>
+            <canvas id="dailyChart" height="200"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Monthly Data Table -->
+<div class="row">
+    <div class="col-12">
+        <div class="table-container">
+            <h5 class="mb-3"><i class="bi bi-table me-2"></i>Chi Tiet Theo Thang</h5>
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Thang</th>
+                            <th class="text-end">Tong Doanh Thu</th>
+                            <th class="text-end">So Don Hang</th>
+                            <th class="text-end">TB/Don</th>
+                            <th>Trend</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for month in monthly %}
+                        <tr>
+                            <td><strong>{{ month._id or month.Month or 'N/A' }}</strong></td>
+                            <td class="text-end text-success">${{ "%.2f"|format(month.TotalRevenue or 0) }}</td>
+                            <td class="text-end">{{ month.OrderCount or month.TransactionCount or 0 }}</td>
+                            <td class="text-end">${{ "%.2f"|format((month.TotalRevenue or 0) / (month.OrderCount or month.TransactionCount or 1)) }}</td>
+                            <td>
+                                {% if loop.index > 1 %}
+                                    {% set prev = monthly[loop.index - 2].TotalRevenue or 0 %}
+                                    {% set curr = month.TotalRevenue or 0 %}
+                                    {% if curr > prev %}
+                                    <i class="bi bi-arrow-up-circle-fill text-success"></i>
+                                    {% elif curr < prev %}
+                                    <i class="bi bi-arrow-down-circle-fill text-danger"></i>
+                                    {% else %}
+                                    <i class="bi bi-dash-circle text-secondary"></i>
+                                    {% endif %}
+                                {% else %}
+                                    <i class="bi bi-dash-circle text-secondary"></i>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const monthlyData = {{ monthly|safe }};
+const dailyData = {{ daily|safe }};
+const hourlyData = {{ hourly|safe }};
+
+// Monthly Chart
+new Chart(document.getElementById('monthlyChart'), {
+    type: 'line',
+    data: {
+        labels: monthlyData.map(m => m._id || m.Month),
+        datasets: [{
+            label: 'Doanh Thu ($)',
+            data: monthlyData.map(m => m.TotalRevenue),
+            borderColor: '#3498db',
+            backgroundColor: 'rgba(52, 152, 219, 0.1)',
+            fill: true,
+            tension: 0.4,
+            pointRadius: 5,
+            pointHoverRadius: 8
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: { display: false }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    callback: value => '$' + value.toLocaleString()
+                }
+            }
+        }
+    }
+});
+
+// Hourly Chart
+new Chart(document.getElementById('hourlyChart'), {
+    type: 'bar',
+    data: {
+        labels: hourlyData.map(h => h._id + ':00'),
+        datasets: [{
+            label: 'Doanh Thu ($)',
+            data: hourlyData.map(h => h.TotalRevenue),
+            backgroundColor: hourlyData.map((h, i) => 
+                i >= 10 && i <= 14 ? '#27ae60' : '#95a5a6'
+            ),
+            borderRadius: 3
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: { display: false }
+        }
+    }
+});
+
+// Daily Chart
+new Chart(document.getElementById('dailyChart'), {
+    type: 'line',
+    data: {
+        labels: dailyData.map(d => d._id),
+        datasets: [{
+            label: 'Doanh Thu ($)',
+            data: dailyData.map(d => d.TotalRevenue),
+            borderColor: '#e74c3c',
+            backgroundColor: 'rgba(231, 76, 60, 0.1)',
+            fill: true,
+            tension: 0.3
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: { display: false }
+        }
+    }
+});
+</script>
+{% endblock %}

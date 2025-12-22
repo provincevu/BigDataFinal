@@ -1,10 +1,10 @@
 @echo off
 REM =====================================================
-REM RUN CUSTOMER CLUSTERING
+REM RUN CUSTOMER CLUSTERING/SEGMENTATION
 REM =====================================================
 echo.
 echo =====================================================
-echo    RUNNING CUSTOMER CLUSTERING
+echo    RUNNING CUSTOMER SEGMENTATION (RFM-Based)
 echo =====================================================
 echo.
 
@@ -16,8 +16,8 @@ docker exec spark-master /spark/bin/spark-submit ^
     --deploy-mode client ^
     --driver-memory 2g ^
     --executor-memory 2g ^
-    --packages org.mongodb.spark:mongo-spark-connector_2.12:3.0.1 ^
-    /spark-apps/customer_clustering.py
+    --packages org.mongodb.spark:mongo-spark-connector_2.12:10.2.1 ^
+    /spark-apps/customer_clustering_simple.py
 
 echo.
 echo =====================================================

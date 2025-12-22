@@ -30,17 +30,17 @@ logger = logging.getLogger(__name__)
 
 
 def create_spark_session():
-    """Tạo Spark Session với cấu hình kết nối Hive và MongoDB"""
+    """Tao Spark Session voi cau hinh ket noi Hive va MongoDB"""
     
     spark = SparkSession.builder \
         .appName("RetailDataPipeline") \
-        .master("spark://spark-master:7077") \
+        .master("local[*]") \
         .config("spark.sql.warehouse.dir", "hdfs://namenode:9000/user/hive/warehouse") \
         .config("hive.metastore.uris", "thrift://hive-metastore:9083") \
         .config("spark.hadoop.hive.metastore.warehouse.dir", "hdfs://namenode:9000/user/hive/warehouse") \
-        .config("spark.mongodb.input.uri", "mongodb://admin:admin123@mongodb:27017/retail_analytics.transactions?authSource=admin") \
-        .config("spark.mongodb.output.uri", "mongodb://admin:admin123@mongodb:27017/retail_analytics.transactions?authSource=admin") \
-        .config("spark.jars.packages", "org.mongodb.spark:mongo-spark-connector_2.12:3.0.1") \
+        .config("spark.mongodb.read.connection.uri", "mongodb://admin:admin123@mongodb:27017/retail_analytics?authSource=admin") \
+        .config("spark.mongodb.write.connection.uri", "mongodb://admin:admin123@mongodb:27017/retail_analytics?authSource=admin") \
+        .config("spark.jars.packages", "org.mongodb.spark:mongo-spark-connector_2.12:10.2.1") \
         .config("spark.hadoop.hive.metastore.client.socket.timeout", "1800s") \
         .config("spark.sql.hive.metastore.sharedPrefixes", "org.postgresql") \
         .config("spark.sql.broadcastTimeout", "1800") \
@@ -50,7 +50,7 @@ def create_spark_session():
         .getOrCreate()
     
     spark.sparkContext.setLogLevel("WARN")
-    logger.info("✅ Spark Session created successfully")
+    logger.info("Spark Session created successfully")
     return spark
 
 
