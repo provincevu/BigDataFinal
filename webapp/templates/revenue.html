@@ -4,15 +4,15 @@
 
 {% block content %}
 <div class="page-header">
-    <h2><i class="bi bi-currency-dollar me-2"></i>Phan Tich Doanh Thu</h2>
-    <p class="text-muted mb-0">Du lieu doanh thu theo thoi gian</p>
+    <h2><i class="bi bi-currency-dollar me-2"></i>Phân Tích Doanh Thu</h2>
+    <p class="text-muted mb-0">Dữ liệu doanh thu theo thời gian</p>
 </div>
 
 <!-- Monthly Revenue Chart -->
 <div class="row mb-4">
     <div class="col-12">
         <div class="chart-container">
-            <h5 class="mb-3"><i class="bi bi-calendar3 me-2"></i>Doanh Thu Theo Thang</h5>
+            <h5 class="mb-3"><i class="bi bi-calendar3 me-2"></i>Doanh Thu Theo Tháng</h5>
             <canvas id="monthlyChart" height="100"></canvas>
         </div>
     </div>
@@ -22,7 +22,7 @@
     <!-- Hourly Pattern -->
     <div class="col-md-6">
         <div class="chart-container">
-            <h5 class="mb-3"><i class="bi bi-clock me-2"></i>Doanh Thu Theo Gio Trong Ngay</h5>
+            <h5 class="mb-3"><i class="bi bi-clock me-2"></i>Doanh Thu Theo Giờ Trong Ngày</h5>
             <canvas id="hourlyChart" height="200"></canvas>
         </div>
     </div>
@@ -30,7 +30,7 @@
     <!-- Daily Trend -->
     <div class="col-md-6">
         <div class="chart-container">
-            <h5 class="mb-3"><i class="bi bi-graph-up me-2"></i>Xu Huong 30 Ngay Gan Nhat</h5>
+            <h5 class="mb-3"><i class="bi bi-graph-up me-2"></i>Xu Hướng Theo Ngày Trong Tuần</h5>
             <canvas id="dailyChart" height="200"></canvas>
         </div>
     </div>
@@ -40,25 +40,31 @@
 <div class="row">
     <div class="col-12">
         <div class="table-container">
-            <h5 class="mb-3"><i class="bi bi-table me-2"></i>Chi Tiet Theo Thang</h5>
+            <h5 class="mb-3"><i class="bi bi-table me-2"></i>Chi Tiết Theo Tháng</h5>
             <div class="table-responsive">
                 <table class="table table-hover">
                     <thead class="table-light">
                         <tr>
-                            <th>Thang</th>
-                            <th class="text-end">Tong Doanh Thu</th>
-                            <th class="text-end">So Don Hang</th>
-                            <th class="text-end">TB/Don</th>
-                            <th>Trend</th>
+                            <th>Tháng</th>
+                            <th class="text-end">Tổng Doanh Thu</th>
+                            <th class="text-end">Số Đơn Hàng</th>
+                            <th class="text-end">TB/Đơn</th>
+                            <th>Xu Hướng</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for month in monthly %}
                         <tr>
-                            <td><strong>{{ month._id or month.Month or 'N/A' }}</strong></td>
+                            <td><strong>
+                                {% if month.Year and month.Month %}
+                                    {{ month.Year }}-{{ '%02d'|format(month.Month) }}
+                                {% else %}
+                                    {{ month.Month or 'N/A' }}
+                                {% endif %}
+                            </strong></td>
                             <td class="text-end text-success">${{ "%.2f"|format(month.TotalRevenue or 0) }}</td>
-                            <td class="text-end">{{ month.OrderCount or month.TransactionCount or 0 }}</td>
-                            <td class="text-end">${{ "%.2f"|format((month.TotalRevenue or 0) / (month.OrderCount or month.TransactionCount or 1)) }}</td>
+                            <td class="text-end">{{ month.TotalOrders or month.OrderCount or month.TransactionCount or 0 }}</td>
+                            <td class="text-end">${{ "%.2f"|format((month.TotalRevenue or 0) / (month.TotalOrders or month.OrderCount or month.TransactionCount or 1)) }}</td>
                             <td>
                                 {% if loop.index > 1 %}
                                     {% set prev = monthly[loop.index - 2].TotalRevenue or 0 %}
@@ -90,14 +96,63 @@ const monthlyData = {{ monthly|safe }};
 const dailyData = {{ daily|safe }};
 const hourlyData = {{ hourly|safe }};
 
+// Helper function to get value from various formats
+function getValue(obj, ...keys) {
+    for (let key of keys) {
+        if (obj[key] !== undefined && obj[key] !== null) {
+            let val = obj[key];
+            // Handle MongoDB extended JSON formats
+            if (typeof val === 'object') {
+                if (val.$numberInt) return parseInt(val.$numberInt);
+                if (val.$numberLong) return parseInt(val.$numberLong);
+                if (val.$numberDouble) return parseFloat(val.$numberDouble);
+            }
+            return val;
+        }
+    }
+    return null;
+}
+
+// Format month label from Year and Month columns
+function formatMonthLabel(m) {
+    let year = getValue(m, 'Year');
+    let month = getValue(m, 'Month');
+    if (year && month) {
+        return `${year}-${String(month).padStart(2, '0')}`;
+    }
+    return 'N/A';
+}
+
+// Format hour label from Hour column
+function formatHourLabel(h) {
+    let hour = getValue(h, 'Hour');
+    if (hour !== null) {
+        return `${hour}:00`;
+    }
+    return 'N/A';
+}
+
+// Format day label from DayName or DayOfWeek column
+function formatDayLabel(d) {
+    let dayName = getValue(d, 'DayName');
+    if (dayName) return dayName;
+    
+    let dayOfWeek = getValue(d, 'DayOfWeek');
+    const days = ['', 'CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+    if (dayOfWeek >= 1 && dayOfWeek <= 7) {
+        return days[dayOfWeek];
+    }
+    return 'N/A';
+}
+
 // Monthly Chart
 new Chart(document.getElementById('monthlyChart'), {
     type: 'line',
     data: {
-        labels: monthlyData.map(m => m._id || m.Month),
+        labels: monthlyData.map(m => formatMonthLabel(m)),
         datasets: [{
             label: 'Doanh Thu ($)',
-            data: monthlyData.map(m => m.TotalRevenue),
+            data: monthlyData.map(m => getValue(m, 'TotalRevenue') || 0),
             borderColor: '#3498db',
             backgroundColor: 'rgba(52, 152, 219, 0.1)',
             fill: true,
@@ -126,13 +181,14 @@ new Chart(document.getElementById('monthlyChart'), {
 new Chart(document.getElementById('hourlyChart'), {
     type: 'bar',
     data: {
-        labels: hourlyData.map(h => h._id + ':00'),
+        labels: hourlyData.map(h => formatHourLabel(h)),
         datasets: [{
             label: 'Doanh Thu ($)',
-            data: hourlyData.map(h => h.TotalRevenue),
-            backgroundColor: hourlyData.map((h, i) => 
-                i >= 10 && i <= 14 ? '#27ae60' : '#95a5a6'
-            ),
+            data: hourlyData.map(h => getValue(h, 'TotalRevenue') || 0),
+            backgroundColor: hourlyData.map(h => {
+                let hour = getValue(h, 'Hour') || 0;
+                return (hour >= 10 && hour <= 14) ? '#27ae60' : '#95a5a6';
+            }),
             borderRadius: 3
         }]
     },
@@ -144,18 +200,16 @@ new Chart(document.getElementById('hourlyChart'), {
     }
 });
 
-// Daily Chart
+// Daily Chart (by day of week)
 new Chart(document.getElementById('dailyChart'), {
-    type: 'line',
+    type: 'bar',
     data: {
-        labels: dailyData.map(d => d._id),
+        labels: dailyData.map(d => formatDayLabel(d)),
         datasets: [{
             label: 'Doanh Thu ($)',
-            data: dailyData.map(d => d.TotalRevenue),
-            borderColor: '#e74c3c',
-            backgroundColor: 'rgba(231, 76, 60, 0.1)',
-            fill: true,
-            tension: 0.3
+            data: dailyData.map(d => getValue(d, 'TotalRevenue') || 0),
+            backgroundColor: '#e74c3c',
+            borderRadius: 3
         }]
     },
     options: {

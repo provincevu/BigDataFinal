@@ -1,18 +1,18 @@
 {% extends 'base.html' %}
 
-{% block title %}Quoc Gia - Retail Analytics{% endblock %}
+{% block title %}Quốc Gia - Retail Analytics{% endblock %}
 
 {% block content %}
 <div class="page-header">
-    <h2><i class="bi bi-globe me-2"></i>Hieu Suat Theo Quoc Gia</h2>
-    <p class="text-muted mb-0">Phan tich doanh thu va khach hang theo tung quoc gia</p>
+    <h2><i class="bi bi-globe me-2"></i>Hiệu Suất Theo Quốc Gia</h2>
+    <p class="text-muted mb-0">Phân tích doanh thu và khách hàng theo từng quốc gia</p>
 </div>
 
 <div class="row mb-4">
     <!-- Chart -->
     <div class="col-md-8">
         <div class="chart-container">
-            <h5 class="mb-3">Top 10 Quoc Gia Theo Doanh Thu</h5>
+            <h5 class="mb-3">Top 10 Quốc Gia Theo Doanh Thu</h5>
             <canvas id="countryChart" height="200"></canvas>
         </div>
     </div>
@@ -21,20 +21,20 @@
     <div class="col-md-4">
         <div class="card bg-primary text-white mb-3">
             <div class="card-body">
-                <h6>Tong So Quoc Gia</h6>
+                <h6>Tổng Số Quốc Gia</h6>
                 <h2>{{ countries|length }}</h2>
             </div>
         </div>
         <div class="card bg-success text-white mb-3">
             <div class="card-body">
-                <h6>Tong Doanh Thu</h6>
+                <h6>Tổng Doanh Thu</h6>
                 <h2>${{ "%.0f"|format(countries|sum(attribute='TotalRevenue')) }}</h2>
             </div>
         </div>
         <div class="card bg-info text-white">
             <div class="card-body">
-                <h6>Tong Don Hang</h6>
-                <h2>{{ countries|sum(attribute='OrderCount') }}</h2>
+                <h6>Tổng Giao Dịch</h6>
+                <h2>{% set total_trans = namespace(value=0) %}{% for c in countries %}{% set total_trans.value = total_trans.value + (c.TotalTransactions or 0) %}{% endfor %}{{ total_trans.value }}</h2>
             </div>
         </div>
     </div>
@@ -42,17 +42,17 @@
 
 <!-- Country Table -->
 <div class="table-container">
-    <h5 class="mb-3"><i class="bi bi-table me-2"></i>Chi Tiet Theo Quoc Gia</h5>
+    <h5 class="mb-3"><i class="bi bi-table me-2"></i>Chi Tiết Theo Quốc Gia</h5>
     <div class="table-responsive">
         <table class="table table-hover">
             <thead class="table-light">
                 <tr>
                     <th>#</th>
-                    <th>Quoc Gia</th>
+                    <th>Quốc Gia</th>
                     <th class="text-end">Doanh Thu</th>
-                    <th class="text-end">So Don</th>
-                    <th class="text-end">TB/Don</th>
-                    <th class="text-center">So Khach</th>
+                    <th class="text-end">Số Giao Dịch</th>
+                    <th class="text-end">TB/Đơn</th>
+                    <th class="text-center">Số Lượng SP</th>
                     <th>% Doanh Thu</th>
                 </tr>
             </thead>
@@ -68,7 +68,7 @@
                         {% endif %}
                     </td>
                     <td>
-                        <strong>{{ country._id or country.Country }}</strong>
+                        <strong>{{ country.Country or 'N/A' }}</strong>
                         {% if loop.index == 1 %}
                         <i class="bi bi-trophy-fill text-warning ms-1"></i>
                         {% endif %}
@@ -76,11 +76,11 @@
                     <td class="text-end text-success">
                         <strong>${{ "%.2f"|format(country.TotalRevenue or 0) }}</strong>
                     </td>
-                    <td class="text-end">{{ country.OrderCount or 0 }}</td>
+                    <td class="text-end">{{ country.TotalTransactions or 0 }}</td>
                     <td class="text-end">
-                        ${{ "%.2f"|format((country.TotalRevenue or 0) / (country.OrderCount or 1)) }}
+                        ${{ "%.2f"|format(country.AvgOrderValue or ((country.TotalRevenue or 0) / (country.TotalTransactions or 1))) }}
                     </td>
-                    <td class="text-center">{{ country.CustomerCount or 'N/A' }}</td>
+                    <td class="text-center">{{ country.TotalQuantity or 'N/A' }}</td>
                     <td>
                         {% set pct = ((country.TotalRevenue or 0) / total_rev * 100) if total_rev > 0 else 0 %}
                         <div class="d-flex align-items-center">
@@ -102,13 +102,29 @@
 <script>
 const countryData = {{ countries[:10]|safe }};
 
+// Helper function to get value
+function getValue(obj, ...keys) {
+    for (let key of keys) {
+        if (obj[key] !== undefined && obj[key] !== null) {
+            let val = obj[key];
+            if (typeof val === 'object') {
+                if (val.$numberInt) return parseInt(val.$numberInt);
+                if (val.$numberLong) return parseInt(val.$numberLong);
+                if (val.$numberDouble) return parseFloat(val.$numberDouble);
+            }
+            return val;
+        }
+    }
+    return null;
+}
+
 new Chart(document.getElementById('countryChart'), {
     type: 'bar',
     data: {
-        labels: countryData.map(c => c._id || c.Country),
+        labels: countryData.map(c => getValue(c, 'Country') || 'N/A'),
         datasets: [{
             label: 'Doanh Thu ($)',
-            data: countryData.map(c => c.TotalRevenue),
+            data: countryData.map(c => getValue(c, 'TotalRevenue') || 0),
             backgroundColor: [
                 '#3498db', '#2ecc71', '#e74c3c', '#f39c12', '#9b59b6',
                 '#1abc9c', '#34495e', '#e67e22', '#95a5a6', '#d35400'

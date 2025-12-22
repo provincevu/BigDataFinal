@@ -7,8 +7,8 @@ Pipeline đơn giản xử lý dữ liệu bán lẻ:
 3. Lưu vào HDFS và MongoDB trực tiếp (không cần Hive)
 """
 
-from pyspark.sql import SparkSession
-from pyspark.sql.functions import (
+from pyspark.sql import SparkSession #type: ignore
+from pyspark.sql.functions import ( #type: ignore
     col, sum as spark_sum, count, avg, 
     month, year, dayofweek, hour, 
     when, lit, round as spark_round,
@@ -16,8 +16,8 @@ from pyspark.sql.functions import (
     regexp_replace, trim, upper,
     row_number, dense_rank, max as spark_max
 )
-from pyspark.sql.window import Window
-from pyspark.sql.types import (
+from pyspark.sql.window import Window #type: ignore
+from pyspark.sql.types import ( #type: ignore
     StructType, StructField, StringType, 
     IntegerType, DoubleType, TimestampType
 )
@@ -40,7 +40,7 @@ def create_spark_session():
         .getOrCreate()
     
     spark.sparkContext.setLogLevel("WARN")
-    logger.info("✅ Spark Session created successfully (No Hive)")
+    logger.info("Spark Session created successfully (No Hive)")
     return spark
 
 

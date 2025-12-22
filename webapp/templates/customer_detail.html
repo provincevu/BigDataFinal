@@ -1,16 +1,16 @@
 {% extends 'base.html' %}
 
-{% block title %}Chi Tiet Khach Hang - Retail Analytics{% endblock %}
+{% block title %}Chi Tiết Khách Hàng - Retail Analytics{% endblock %}
 
 {% block content %}
 <div class="page-header">
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb mb-2">
-            <li class="breadcrumb-item"><a href="/customers">Khach Hang</a></li>
+            <li class="breadcrumb-item"><a href="/customers">Khách Hàng</a></li>
             <li class="breadcrumb-item active">{{ customer.CustomerID }}</li>
         </ol>
     </nav>
-    <h2><i class="bi bi-person me-2"></i>Khach Hang #{{ customer.CustomerID }}</h2>
+    <h2><i class="bi bi-person me-2"></i>Khách Hàng #{{ customer.CustomerID }}</h2>
 </div>
 
 {% if customer %}
@@ -44,7 +44,7 @@
                     <div class="col-md-4">
                         <div class="p-3 bg-light rounded">
                             <h2 class="text-primary mb-0">{{ customer.Recency }}</h2>
-                            <small class="text-muted">Recency (ngay)</small>
+                            <small class="text-muted">Recency (ngày)</small>
                             <div class="mt-2">
                                 <span class="badge bg-primary">R: {{ customer.R_Score or 'N/A' }}</span>
                             </div>
@@ -53,7 +53,7 @@
                     <div class="col-md-4">
                         <div class="p-3 bg-light rounded">
                             <h2 class="text-success mb-0">{{ customer.Frequency }}</h2>
-                            <small class="text-muted">Frequency (lan)</small>
+                            <small class="text-muted">Frequency (lần)</small>
                             <div class="mt-2">
                                 <span class="badge bg-success">F: {{ customer.F_Score or 'N/A' }}</span>
                             </div>
@@ -74,11 +74,11 @@
                 
                 <div class="row">
                     <div class="col-md-6">
-                        <p><strong>Gia tri don hang trung binh:</strong> ${{ "%.2f"|format(customer.AvgOrderValue or 0) }}</p>
-                        <p><strong>So san pham da mua:</strong> {{ customer.UniqueProducts or 'N/A' }}</p>
+                        <p><strong>Giá trị đơn hàng trung bình:</strong> ${{ "%.2f"|format(customer.AvgOrderValue or 0) }}</p>
+                        <p><strong>Số sản phẩm đã mua:</strong> {{ customer.UniqueProducts or 'N/A' }}</p>
                     </div>
                     <div class="col-md-6">
-                        <p><strong>RFM Score tong:</strong> 
+                        <p><strong>RFM Score tổng:</strong> 
                             <span class="badge bg-dark" style="font-size: 1.2rem;">
                                 {{ customer.RFM_Score or (customer.R_Score|default(0) + customer.F_Score|default(0) + customer.M_Score|default(0)) }}
                             </span>
@@ -103,44 +103,44 @@
     <div class="col-md-6 mb-4">
         <div class="card">
             <div class="card-header">
-                <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>Giai Thich Phan Khuc</h5>
+                <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>Giải Thích Phân Khúc</h5>
             </div>
             <div class="card-body">
                 {% if customer.Segment == 'Champions' %}
                 <div class="alert alert-warning">
                     <strong>Champions (VIP)</strong><br>
-                    Khach hang tot nhat - mua gan day, mua thuong xuyen, chi tieu nhieu. 
-                    Can cham soc dac biet va giu chan ho.
+                    Khách hàng tốt nhất - mua gần đây, mua thường xuyên, chi tiêu nhiều. 
+                    Cần chăm sóc đặc biệt và giữ chân họ.
                 </div>
                 {% elif customer.Segment == 'Loyal Customers' %}
                 <div class="alert alert-success">
                     <strong>Loyal Customers</strong><br>
-                    Khach hang trung thanh - mua thuong xuyen. 
-                    Co the chuyen thanh Champions neu tang chi tieu.
+                    Khách hàng trung thành - mua thường xuyên. 
+                    Có thể chuyển thành Champions nếu tăng chi tiêu.
                 </div>
                 {% elif customer.Segment == 'Big Spenders' %}
                 <div class="alert alert-info">
                     <strong>Big Spenders</strong><br>
-                    Chi tieu lon nhung chua thuong xuyen. 
-                    Can khich le ho mua hang thuong xuyen hon.
+                    Chi tiêu lớn nhưng chưa thường xuyên. 
+                    Cần khích lệ họ mua hàng thường xuyên hơn.
                 </div>
                 {% elif customer.Segment == 'At Risk' %}
                 <div class="alert alert-danger">
                     <strong>At Risk</strong><br>
-                    Truoc day la khach hang tot nhung da lau khong mua. 
-                    Can co chien dich win-back ngay!
+                    Trước đây là khách hàng tốt nhưng đã lâu không mua. 
+                    Cần có chiến dịch win-back ngay!
                 </div>
                 {% elif customer.Segment == 'Lost Customers' %}
                 <div class="alert alert-dark">
                     <strong>Lost Customers</strong><br>
-                    Da mat khach hang. Co the thu chien dich tai kich hoat 
-                    nhung xac suat thanh cong thap.
+                    Đã mất khách hàng. Có thể thử chiến dịch tái kích hoạt 
+                    nhưng xác suất thành công thấp.
                 </div>
                 {% else %}
                 <div class="alert alert-secondary">
                     <strong>{{ customer.Segment or 'Regular' }}</strong><br>
-                    Khach hang binh thuong. Can theo doi va co chien luoc 
-                    phu hop de chuyen ho len nhom tot hon.
+                    Khách hàng bình thường. Cần theo dõi và có chiến lược 
+                    phù hợp để chuyển họ lên nhóm tốt hơn.
                 </div>
                 {% endif %}
             </div>
@@ -150,12 +150,12 @@
 
 {% else %}
 <div class="alert alert-warning">
-    Khong tim thay thong tin khach hang.
+    Không tìm thấy thông tin khách hàng.
 </div>
 {% endif %}
 
 <a href="/customers" class="btn btn-outline-secondary">
-    <i class="bi bi-arrow-left"></i> Quay lai
+    <i class="bi bi-arrow-left"></i> Quay lại
 </a>
 {% endblock %}
 

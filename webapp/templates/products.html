@@ -1,11 +1,11 @@
 {% extends 'base.html' %}
 
-{% block title %}San Pham - Retail Analytics{% endblock %}
+{% block title %}Sản Phẩm - Retail Analytics{% endblock %}
 
 {% block content %}
 <div class="page-header">
-    <h2><i class="bi bi-box-seam me-2"></i>San Pham Ban Chay</h2>
-    <p class="text-muted mb-0">Du lieu phan tich tu Hadoop/Spark</p>
+    <h2><i class="bi bi-box-seam me-2"></i>Sản Phẩm Bán Chạy</h2>
+    <p class="text-muted mb-0">Dữ liệu phân tích từ Hadoop/Spark</p>
 </div>
 
 <div class="row">
@@ -18,8 +18,8 @@
                     <thead class="table-light sticky-top">
                         <tr>
                             <th>#</th>
-                            <th>Ma SP</th>
-                            <th>Ten San Pham</th>
+                            <th>Mã SP</th>
+                            <th>Tên Sản Phẩm</th>
                             <th class="text-end">Doanh Thu</th>
                         </tr>
                     </thead>
@@ -49,15 +49,15 @@
     <!-- Top by Quantity -->
     <div class="col-md-6 mb-4">
         <div class="table-container">
-            <h5 class="mb-3"><i class="bi bi-box text-primary me-2"></i>Top Theo So Luong</h5>
+            <h5 class="mb-3"><i class="bi bi-box text-primary me-2"></i>Top Theo Số Lượng</h5>
             <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
                 <table class="table table-hover table-sm">
                     <thead class="table-light sticky-top">
                         <tr>
                             <th>#</th>
-                            <th>Ma SP</th>
-                            <th>Ten San Pham</th>
-                            <th class="text-end">So Luong</th>
+                            <th>Mã SP</th>
+                            <th>Tên Sản Phẩm</th>
+                            <th class="text-end">Số Lượng</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -94,7 +94,7 @@
     </div>
     <div class="col-md-6 mb-4">
         <div class="chart-container">
-            <h5 class="mb-3">Top 10 Theo So Luong</h5>
+            <h5 class="mb-3">Top 10 Theo Số Lượng</h5>
             <canvas id="quantityChart" height="300"></canvas>
         </div>
     </div>
@@ -133,7 +133,7 @@ new Chart(document.getElementById('quantityChart'), {
     data: {
         labels: quantityData.map(p => p.StockCode),
         datasets: [{
-            label: 'So Luong',
+            label: 'Số Lượng',
             data: quantityData.map(p => p.TotalQuantity),
             backgroundColor: '#3498db',
             borderRadius: 5

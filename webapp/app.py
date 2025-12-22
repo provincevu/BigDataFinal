@@ -1,8 +1,8 @@
 """
 Retail Analytics Web Application
 ================================
-Ung dung web Flask de doc va hien thi du lieu
-da xu ly tu Hadoop/Spark luu trong MongoDB
+Ứng dụng web Flask để đọc và hiển thị dữ liệu
+đã xử lý từ Hadoop/Spark lưu trong MongoDB
 """
 
 from flask import Flask, render_template, jsonify, request
@@ -18,12 +18,12 @@ MONGO_URI = os.environ.get('MONGO_URI', 'mongodb://admin:admin123@mongodb:27017/
 DATABASE_NAME = 'retail_analytics'
 
 def get_db():
-    """Ket noi MongoDB"""
+    """Kết nối MongoDB"""
     client = MongoClient(MONGO_URI)
     return client[DATABASE_NAME]
 
 def parse_json(data):
-    """Convert MongoDB BSON to JSON"""
+    """Chuyển đổi MongoDB BSON sang JSON"""
     return json.loads(json_util.dumps(data))
 
 
@@ -56,25 +56,25 @@ def index():
 # ==================== KHACH HANG ====================
 @app.route('/customers')
 def customers():
-    """Trang danh sach khach hang va phan khuc"""
+    """Trang danh sách khách hàng và phân khúc"""
     db = get_db()
     
-    # Phan trang
+    # Phân trang
     page = request.args.get('page', 1, type=int)
     per_page = 20
     skip = (page - 1) * per_page
     
-    # Loc theo segment
+    # Lọc theo segment
     segment_filter = request.args.get('segment', '')
     query = {}
     if segment_filter:
         query['Segment'] = segment_filter
     
-    # Lay du lieu
+    # Lấy dữ liệu khách hàng
     customers = list(db.customer_clusters.find(query).skip(skip).limit(per_page))
     total = db.customer_clusters.count_documents(query)
     
-    # Lay danh sach cac segments
+    # Lấy danh sách các phân khúc
     segments = db.customer_clusters.distinct('Segment')
     
     return render_template('customers.html',
@@ -88,15 +88,15 @@ def customers():
 
 @app.route('/customer/<customer_id>')
 def customer_detail(customer_id):
-    """Chi tiet khach hang"""
+    """Chi tiết khách hàng"""
     db = get_db()
     
-    # Tim khach hang
+    # Tìm khách hàng
     customer = db.customer_clusters.find_one({'CustomerID': int(customer_id)})
     if not customer:
         customer = db.customer_clusters.find_one({'CustomerID': customer_id})
     
-    # Tim RFM data
+    # Tìm dữ liệu RFM
     rfm = db.customer_rfm.find_one({'CustomerID': int(customer_id)})
     if not rfm:
         rfm = db.customer_rfm.find_one({'CustomerID': customer_id})
@@ -109,13 +109,13 @@ def customer_detail(customer_id):
 # ==================== SAN PHAM ====================
 @app.route('/products')
 def products():
-    """Trang san pham ban chay"""
+    """Trang sản phẩm bán chạy"""
     db = get_db()
     
-    # Lay top san pham theo doanh thu
+    # Lấy top sản phẩm theo doanh thu
     top_revenue = list(db.top_products_revenue.find().limit(50))
     
-    # Lay top san pham theo so luong
+    # Lấy top sản phẩm theo số lượng bán
     top_quantity = list(db.top_products_quantity.find().limit(50))
     
     return render_template('products.html',
@@ -126,20 +126,20 @@ def products():
 # ==================== DOANH THU ====================
 @app.route('/revenue')
 def revenue():
-    """Trang phan tich doanh thu"""
+    """Trang phân tích doanh thu"""
     db = get_db()
     
-    # Doanh thu theo thang
+    # Doanh thu theo tháng
     monthly = list(db.monthly_revenue.find().sort('_id', 1))
     
-    # Doanh thu theo ngay (30 ngay gan nhat)
+    # Doanh thu theo ngày (30 ngày gần nhất)
     daily = list(db.daily_revenue.find().sort('_id', -1).limit(30))
     daily.reverse()
     
-    # Doanh thu theo gio
+    # Doanh thu theo giờ
     hourly = list(db.hourly_revenue.find().sort('_id', 1))
     
-    # Xu huong theo thang
+    # Xu hướng theo tháng
     trend = list(db.monthly_trend.find().sort('_id', 1))
     
     return render_template('revenue.html',
@@ -152,26 +152,26 @@ def revenue():
 # ==================== QUOC GIA ====================
 @app.route('/countries')
 def countries():
-    """Trang hieu suat theo quoc gia"""
+    """Trang hiệu suất theo quốc gia"""
     db = get_db()
     
-    # Lay du lieu theo quoc gia
+    # Lấy dữ liệu theo quốc gia
     country_data = list(db.country_performance.find().sort('TotalRevenue', -1))
     
     return render_template('countries.html',
                          countries=parse_json(country_data))
 
 
-# ==================== PHAN KHUC ====================
+# ==================== PHÂN KHÚC ====================
 @app.route('/segments')
 def segments():
-    """Trang phan tich phan khuc khach hang"""
+    """Trang phân tích phân khúc khách hàng"""
     db = get_db()
     
-    # Thong ke phan khuc
+    # Thống kê phân khúc
     segment_stats = list(db.cluster_statistics.find())
     
-    # Dem so luong theo segment
+    # Đếm số lượng theo phân khúc
     segment_counts = []
     for seg in db.customer_clusters.aggregate([
         {'$group': {'_id': '$Segment', 'count': {'$sum': 1}}},
@@ -187,13 +187,13 @@ def segments():
 # ==================== GOI Y SAN PHAM ====================
 @app.route('/recommendations')
 def recommendations():
-    """Trang goi y san pham"""
+    """Trang gợi ý sản phẩm"""
     db = get_db()
     
-    # Lay product associations
+    # Lấy product associations
     associations = list(db.product_associations.find().limit(100))
     
-    # Lay product recommendations
+    # Lấy gợi ý sản phẩm
     recs = list(db.product_recommendations.find().limit(100))
     
     return render_template('recommendations.html',
@@ -204,7 +204,7 @@ def recommendations():
 # ==================== API ENDPOINTS ====================
 @app.route('/api/stats')
 def api_stats():
-    """API: Thong ke tong quan"""
+    """API: Thống kê tổng quan"""
     db = get_db()
     stats = {
         'total_customers': db.customer_clusters.count_documents({}),
@@ -216,7 +216,7 @@ def api_stats():
 
 @app.route('/api/customers')
 def api_customers():
-    """API: Danh sach khach hang"""
+    """API: Danh sách khách hàng và phân khúc"""
     db = get_db()
     limit = request.args.get('limit', 100, type=int)
     customers = list(db.customer_clusters.find().limit(limit))
@@ -225,7 +225,7 @@ def api_customers():
 
 @app.route('/api/segments')
 def api_segments():
-    """API: Thong ke phan khuc"""
+    """API: Thống kê phân khúc khách hàng"""
     db = get_db()
     segments = list(db.cluster_statistics.find())
     return jsonify(parse_json(segments))
@@ -233,7 +233,7 @@ def api_segments():
 
 @app.route('/api/revenue/monthly')
 def api_monthly_revenue():
-    """API: Doanh thu theo thang"""
+    """API: Doanh thu theo tháng"""
     db = get_db()
     data = list(db.monthly_revenue.find().sort('_id', 1))
     return jsonify(parse_json(data))
@@ -241,7 +241,7 @@ def api_monthly_revenue():
 
 @app.route('/api/products/top')
 def api_top_products():
-    """API: Top san pham"""
+    """API: Top sản phẩm theo doanh thu"""
     db = get_db()
     limit = request.args.get('limit', 20, type=int)
     data = list(db.top_products_revenue.find().limit(limit))
@@ -250,7 +250,7 @@ def api_top_products():
 
 @app.route('/api/countries')
 def api_countries():
-    """API: Du lieu theo quoc gia"""
+    """API: Dữ liệu theo quốc gia"""
     db = get_db()
     data = list(db.country_performance.find())
     return jsonify(parse_json(data))

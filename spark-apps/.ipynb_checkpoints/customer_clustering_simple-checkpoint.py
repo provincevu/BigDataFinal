@@ -1,8 +1,8 @@
 """
 Customer Segmentation Analysis (SQL-Based)
 ===========================================
-Phan khach hang dua tren phan tich RFM
-Su dung SQL thay vi ML library (khong can numpy)
+Phân khách hàng dựa trên phân tích RFM
+Sử dụng SQL thay vì ML library (không cần numpy)
 """
 
 from pyspark.sql import SparkSession
@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 
 def create_spark_session():
-    """Tao Spark Session voi MongoDB Connector"""
+    """Tạo Spark Session với MongoDB Connector"""
     
     spark = SparkSession.builder \
         .appName("CustomerSegmentation") \
@@ -33,38 +33,38 @@ def create_spark_session():
 
 
 def load_transactions(spark):
-    """Doc du lieu tu HDFS"""
+    """Đọc dữ liệu từ HDFS"""
     
-    logger.info("Doc du lieu tu HDFS...")
+    logger.info("Đọc dữ liệu từ HDFS...")
     
     df = spark.read \
         .option("header", "true") \
         .option("inferSchema", "true") \
         .csv("hdfs://namenode:9000/user/retail/online_retail.csv")
     
-    # Tinh TotalAmount
+    # Tính TotalAmount
     df = df.withColumn("TotalAmount", col("Quantity") * col("UnitPrice"))
     
-    # Loc du lieu hop le
+    # Lọc dữ liệu hợp lệ
     df = df.filter(
         (col("CustomerID").isNotNull()) &
         (col("Quantity") > 0) &
         (col("UnitPrice") > 0)
     )
     
-    logger.info(f"Da doc {df.count()} giao dich hop le")
+    logger.info(f"Đã đọc {df.count()} giao dịch hợp lệ")
     return df
 
 
 def calculate_rfm(spark, transactions):
     """
-    Tinh RFM metrics cho moi khach hang:
-    - Recency: So ngay tu lan mua cuoi
-    - Frequency: So lan mua hang
-    - Monetary: Tong chi tieu
+    Tính RFM metrics cho mỗi khách hàng:
+    - Recency: Số ngày từ lần mua cuối
+    - Frequency: Số lần mua hàng
+    - Monetary: Tổng chi tiêu
     """
     
-    logger.info("Tinh toan RFM metrics...")
+    logger.info("Tính toán RFM metrics...")
     
     transactions.createOrReplaceTempView("trans")
     
@@ -85,18 +85,18 @@ def calculate_rfm(spark, transactions):
         HAVING COUNT(DISTINCT InvoiceNo) >= 2
     """)
     
-    logger.info(f"Tinh RFM cho {rfm_df.count()} khach hang")
+    logger.info(f"Tính RFM cho {rfm_df.count()} khách hàng")
     return rfm_df
 
 
 def assign_rfm_scores(rfm_df):
     """
-    Gan diem RFM (1-5) dua tren percentile
+    Gán điểm RFM (1-5) dựa trên percentile
     """
     
-    logger.info("Gan diem RFM (1-5 scale)...")
+    logger.info("Gán điểm RFM (1-5 scale)...")
     
-    # Tao window cho ranking
+    # Tạo window cho ranking
     window = Window.orderBy(col("Recency").desc())
     rfm_df = rfm_df.withColumn("R_percentile", percent_rank().over(window))
     
@@ -106,7 +106,7 @@ def assign_rfm_scores(rfm_df):
     window = Window.orderBy(col("Monetary"))
     rfm_df = rfm_df.withColumn("M_percentile", percent_rank().over(window))
     
-    # Gan diem 1-5 dua tren percentile
+    # Gán điểm 1-5 dựa trên percentile
     rfm_df = rfm_df.withColumn(
         "R_Score",
         when(col("R_percentile") >= 0.8, 5)
@@ -130,7 +130,7 @@ def assign_rfm_scores(rfm_df):
         .otherwise(1)
     )
     
-    # Tinh RFM Score tong
+    # Tính RFM Score tổng
     rfm_df = rfm_df.withColumn(
         "RFM_Score",
         col("R_Score") + col("F_Score") + col("M_Score")
@@ -141,38 +141,38 @@ def assign_rfm_scores(rfm_df):
 
 def assign_customer_segments(rfm_df):
     """
-    Gan phan khuc khach hang dua tren RFM score
+    Gán phân khúc khách hàng dựa trên RFM score
     """
     
-    logger.info("Phan loai khach hang theo phan khuc...")
+    logger.info("Phân loại khách hàng theo phân khúc...")
     
     segmented_df = rfm_df.withColumn(
         "Segment",
         when(
             (col("R_Score") >= 4) & (col("F_Score") >= 4) & (col("M_Score") >= 4),
-            "Champions"  # Khach hang VIP
+            "Champions"  # Khách hàng VIP
         ).when(
             (col("R_Score") >= 4) & (col("F_Score") >= 3),
-            "Loyal Customers"  # Khach hang trung thanh
+            "Loyal Customers"  # Khách hàng trung thành
         ).when(
             (col("R_Score") >= 4) & (col("F_Score") <= 2),
-            "New Customers"  # Khach hang moi
+            "New Customers"  # Khách hàng mới
         ).when(
             (col("R_Score") <= 2) & (col("F_Score") >= 4) & (col("M_Score") >= 4),
-            "At Risk"  # Khach hang co nguy co mat
+            "At Risk"  # Khách hàng có nguy cơ mất
         ).when(
             (col("R_Score") <= 2) & (col("F_Score") <= 2),
-            "Lost Customers"  # Khach hang da mat
+            "Lost Customers"  # Khách hàng đã mất
         ).when(
             (col("R_Score") >= 3) & (col("M_Score") >= 4),
-            "Big Spenders"  # Khach hang chi tieu lon
+            "Big Spenders"  # Khách hàng chi tiêu lớn
         ).when(
             (col("R_Score") <= 2) & (col("F_Score") >= 3),
-            "Hibernating"  # Khach hang tam nghi
-        ).otherwise("Regular")  # Khach hang binh thuong
+            "Hibernating"  # Khách hàng tạm nghỉ
+        ).otherwise("Regular")  # Khách hàng bình thường
     )
     
-    # Them gia tri so cho Segment de dung lam Cluster ID
+    # Thêm giá trị số cho Segment để dùng làm Cluster ID
     segmented_df = segmented_df.withColumn(
         "Cluster",
         when(col("Segment") == "Champions", 0)
@@ -191,11 +191,11 @@ def assign_customer_segments(rfm_df):
 
 def analyze_segments(segmented_df):
     """
-    Phan tich thong ke tung phan khuc
+    Phân tích thống kê từng phân khúc
     """
     
     logger.info("\n" + "="*60)
-    logger.info("PHAN TICH PHAN KHUC KHACH HANG")
+    logger.info("PHÂN TÍCH PHÂN KHÚC KHÁCH HÀNG")
     logger.info("="*60)
     
     segment_stats = segmented_df.groupBy("Segment", "Cluster").agg(
@@ -212,11 +212,11 @@ def analyze_segments(segmented_df):
 
 
 def save_to_hdfs(segmented_df, segment_stats):
-    """Luu ket qua vao HDFS"""
+    """Lưu kết quả vào HDFS"""
     
-    logger.info("Luu ket qua vao HDFS...")
+    logger.info("Lưu kết quả vào HDFS...")
     
-    # Luu customer segments
+    # Lưu customer segments
     output_df = segmented_df.select(
         "CustomerID", "Country", "Recency", "Frequency", "Monetary",
         "AvgOrderValue", "UniqueProducts",
@@ -228,22 +228,22 @@ def save_to_hdfs(segmented_df, segment_stats):
         .mode("overwrite") \
         .parquet("hdfs://namenode:9000/user/retail/analysis/customer_clusters")
     
-    # Luu segment statistics
+    # Lưu segment statistics
     segment_stats.write \
         .mode("overwrite") \
         .parquet("hdfs://namenode:9000/user/retail/analysis/cluster_statistics")
     
-    logger.info("Da luu vao HDFS: /user/retail/analysis/customer_clusters")
-    logger.info("Da luu vao HDFS: /user/retail/analysis/cluster_statistics")
+    logger.info("Đã lưu vào HDFS: /user/retail/analysis/customer_clusters")
+    logger.info("Đã lưu vào HDFS: /user/retail/analysis/cluster_statistics")
 
 
 def save_to_mongodb(spark, segmented_df, segment_stats):
-    """Luu ket qua vao MongoDB"""
+    """Lưu kết quả vào MongoDB"""
     
-    logger.info("Luu ket qua vao MongoDB...")
+    logger.info("Lưu kết quả vào MongoDB...")
     
     try:
-        # Luu customer clusters
+        # Lưu customer clusters
         output_df = segmented_df.select(
             "CustomerID", "Country", "Recency", "Frequency", "Monetary",
             "AvgOrderValue", "UniqueProducts",
@@ -257,19 +257,19 @@ def save_to_mongodb(spark, segmented_df, segment_stats):
             .option("connection.uri", "mongodb://admin:admin123@mongodb:27017/retail_analytics.customer_clusters?authSource=admin") \
             .save()
         
-        logger.info("Da luu customer_clusters vao MongoDB")
+        logger.info("Đã lưu customer_clusters vào MongoDB")
         
-        # Luu segment statistics
+        # Lưu segment statistics
         segment_stats.write \
             .format("mongodb") \
             .mode("overwrite") \
             .option("connection.uri", "mongodb://admin:admin123@mongodb:27017/retail_analytics.cluster_statistics?authSource=admin") \
             .save()
         
-        logger.info("Da luu cluster_statistics vao MongoDB")
+        logger.info("Đã lưu cluster_statistics vào MongoDB")
         
     except Exception as e:
-        logger.warning(f"Khong the luu vao MongoDB: {e}")
+        logger.warning(f"Không thể lưu vào MongoDB: {e}")
 
 
 def main():
@@ -284,32 +284,32 @@ def main():
     spark = create_spark_session()
     
     try:
-        # 1. Doc du lieu
+        # 1. Đọc dữ liệu
         transactions = load_transactions(spark)
         
-        # 2. Tinh RFM
+        # 2. Tính RFM
         rfm_df = calculate_rfm(spark, transactions)
         
-        # 3. Gan diem RFM
+        # 3. Gán điểm RFM
         rfm_scored = assign_rfm_scores(rfm_df)
         
-        # 4. Phan loai phan khuc
+        # 4. Phân loại phân khúc
         segmented_df = assign_customer_segments(rfm_scored)
         
-        # 5. Phan tich
+        # 5. Phân tích
         segment_stats = analyze_segments(segmented_df)
         
-        # 6. Luu ket qua
+        # 6. Lưu kết quả
         save_to_hdfs(segmented_df, segment_stats)
         save_to_mongodb(spark, segmented_df, segment_stats)
         
         logger.info("")
         logger.info("="*60)
-        logger.info("  CUSTOMER SEGMENTATION HOAN TAT!")
+        logger.info("  CUSTOMER SEGMENTATION HOÀN TẤT!")
         logger.info("="*60)
         
     except Exception as e:
-        logger.error(f"Loi: {e}")
+        logger.error(f"Lỗi: {e}")
         import traceback
         traceback.print_exc()
         raise

@@ -1,0 +1,75 @@
+================================================================================
+GIẢI THÍCH: TẠI SAO DỮ LIỆU TỪ 550K+ GIẢM XUỐNG CÒN KHOẢNG 400K SAU XỬ LÝ
+================================================================================
+
+Dữ liệu ban đầu (online_retail.csv) có hơn 550,000 dòng (records). Sau khi xử lý 
+qua pipeline ETL bằng Apache Spark, dữ liệu còn lại khoảng 400,000 dòng.
+
+NGUYÊN NHÂN GIẢM DỮ LIỆU:
+--------------------------------------------------------------------------------
+
+1. LOẠI BỎ CÁC GIAO DỊCH HỦY (CANCELLED TRANSACTIONS)
+   - Các giao dịch có InvoiceNo bắt đầu bằng chữ "C" là các đơn hàng bị hủy
+   - Ví dụ: C536379, C536391, C536394...
+   - Những giao dịch này có Quantity âm (trả hàng/hoàn tiền)
+   - Ước tính: ~10,000 - 15,000 records bị loại
+
+2. LOẠI BỎ CÁC DÒNG CÓ GIÁ TRỊ NULL/MISSING
+   - CustomerID bị thiếu (NULL): Rất nhiều giao dịch không có thông tin khách hàng
+   - Description bị thiếu
+   - StockCode không hợp lệ
+   - Ước tính: ~130,000 - 140,000 records bị loại (chủ yếu do thiếu CustomerID)
+
+3. LOẠI BỎ CÁC DÒNG CÓ GIÁ TRỊ KHÔNG HỢP LỆ
+   - Quantity <= 0: Số lượng âm hoặc bằng 0
+   - UnitPrice <= 0: Giá âm hoặc bằng 0 (có thể là mã khuyến mãi, test)
+   - Ước tính: ~5,000 - 10,000 records bị loại
+
+4. LOẠI BỎ CÁC SẢN PHẨM ĐẶC BIỆT/TEST
+   - StockCode là các mã đặc biệt như: POST, DOT, M, BANK CHARGES, PADS, etc.
+   - Đây không phải sản phẩm thực sự mà là phí dịch vụ hoặc mã test
+   - Ước tính: ~1,000 - 2,000 records bị loại
+
+5. LOẠI BỎ CÁC DÒNG DUPLICATE (NẾU CÓ)
+   - Các dòng trùng lặp hoàn toàn được loại bỏ
+   - Ước tính: ~500 - 1,000 records bị loại
+
+--------------------------------------------------------------------------------
+TỔNG KẾT:
+--------------------------------------------------------------------------------
+
+Dữ liệu gốc:           ~541,909 records
+Sau khi làm sạch:      ~400,000 - 406,000 records
+Tỷ lệ giữ lại:         ~74-75%
+Tỷ lệ loại bỏ:         ~25-26%
+
+--------------------------------------------------------------------------------
+LÝ DO LÀM SẠCH DỮ LIỆU:
+--------------------------------------------------------------------------------
+
+1. ĐẢM BẢO CHẤT LƯỢNG PHÂN TÍCH
+   - Dữ liệu thiếu CustomerID không thể dùng cho phân tích khách hàng (RFM, Clustering)
+   - Giao dịch hủy không phản ánh doanh thu thực tế
+
+2. ĐẢM BẢO TÍNH CHÍNH XÁC
+   - Loại bỏ các outliers và dữ liệu không hợp lệ
+   - Tránh sai lệch trong các chỉ số thống kê
+
+3. TỐI ƯU HIỆU SUẤT
+   - Giảm khối lượng dữ liệu cần xử lý
+   - Tăng tốc độ các phép tính toán
+
+--------------------------------------------------------------------------------
+CODE XỬ LÝ TRONG retail_etl_simple.py:
+--------------------------------------------------------------------------------
+
+# Lọc dữ liệu hợp lệ
+df_clean = df.filter(
+    (col("CustomerID").isNotNull()) &          # Có thông tin khách hàng
+    (col("Quantity") > 0) &                     # Số lượng dương
+    (col("UnitPrice") > 0) &                    # Giá dương
+    (~col("InvoiceNo").startswith("C")) &       # Không phải đơn hủy
+    (col("StockCode").rlike("^[0-9]"))          # Mã sản phẩm hợp lệ
+)
+
+================================================================================

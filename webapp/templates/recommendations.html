@@ -1,11 +1,11 @@
 {% extends 'base.html' %}
 
-{% block title %}Goi Y San Pham - Retail Analytics{% endblock %}
+{% block title %}Gợi Ý Sản Phẩm - Retail Analytics{% endblock %}
 
 {% block content %}
 <div class="page-header">
-    <h2><i class="bi bi-lightbulb me-2"></i>Goi Y San Pham</h2>
-    <p class="text-muted mb-0">Phan tich lien ket san pham va goi y dua tren Basket Analysis</p>
+    <h2><i class="bi bi-lightbulb me-2"></i>Gợi Ý Sản Phẩm</h2>
+    <p class="text-muted mb-0">Phân tích liên kết sản phẩm và gợi ý dựa trên Basket Analysis</p>
 </div>
 
 <div class="row">
@@ -14,17 +14,17 @@
         <div class="table-container">
             <h5 class="mb-3">
                 <i class="bi bi-link-45deg text-primary me-2"></i>
-                Lien Ket San Pham (Frequent Itemsets)
+                Liên Kết Sản Phẩm (Frequent Itemsets)
             </h5>
-            <p class="small text-muted">San pham thuong duoc mua cung nhau</p>
+            <p class="small text-muted">Sản phẩm thường được mua cùng nhau</p>
             
             <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
                 <table class="table table-hover table-sm">
                     <thead class="table-light sticky-top">
                         <tr>
-                            <th>San Pham 1</th>
-                            <th>San Pham 2</th>
-                            <th class="text-center">So Lan</th>
+                            <th>Sản Phẩm 1</th>
+                            <th>Sản Phẩm 2</th>
+                            <th class="text-center">Số Lần</th>
                             <th class="text-center">Support</th>
                         </tr>
                     </thead>
@@ -60,17 +60,17 @@
         <div class="table-container">
             <h5 class="mb-3">
                 <i class="bi bi-stars text-warning me-2"></i>
-                Goi Y San Pham (Recommendations)
+                Gợi Ý Sản Phẩm (Recommendations)
             </h5>
-            <p class="small text-muted">Khi khach mua san pham A, goi y san pham B</p>
+            <p class="small text-muted">Khi khách mua sản phẩm A, gợi ý sản phẩm B</p>
             
             <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
                 <table class="table table-hover table-sm">
                     <thead class="table-light sticky-top">
                         <tr>
-                            <th>Neu Mua</th>
+                            <th>Nếu Mua</th>
                             <th><i class="bi bi-arrow-right"></i></th>
-                            <th>Goi Y</th>
+                            <th>Gợi Ý</th>
                             <th class="text-center">Confidence</th>
                         </tr>
                     </thead>
@@ -113,7 +113,7 @@
     <div class="col-12">
         <div class="card">
             <div class="card-header">
-                <h5 class="mb-0"><i class="bi bi-question-circle me-2"></i>Cach Thuc Hoat Dong</h5>
+                <h5 class="mb-0"><i class="bi bi-question-circle me-2"></i>Cách Thức Hoạt Động</h5>
             </div>
             <div class="card-body">
                 <div class="row">
@@ -121,30 +121,30 @@
                         <div class="text-center mb-3">
                             <i class="bi bi-cart3" style="font-size: 48px; color: #3498db;"></i>
                         </div>
-                        <h6 class="text-center">1. Thu Thap Du Lieu</h6>
+                        <h6 class="text-center">1. Thu Thập Dữ Liệu</h6>
                         <p class="small text-muted text-center">
-                            Phan tich lich su mua hang cua tat ca khach hang de tim cac san pham 
-                            thuong duoc mua cung nhau.
+                            Phân tích lịch sử mua hàng của tất cả khách hàng để tìm các sản phẩm 
+                            thường được mua cùng nhau.
                         </p>
                     </div>
                     <div class="col-md-4">
                         <div class="text-center mb-3">
                             <i class="bi bi-cpu" style="font-size: 48px; color: #e74c3c;"></i>
                         </div>
-                        <h6 class="text-center">2. Xu Ly Hadoop/Spark</h6>
+                        <h6 class="text-center">2. Xử Lý Hadoop/Spark</h6>
                         <p class="small text-muted text-center">
-                            Su dung Apache Spark de xu ly hang trieu giao dich va tim kiem 
-                            cac pattern mua hang.
+                            Sử dụng Apache Spark để xử lý hàng triệu giao dịch và tìm kiếm 
+                            các pattern mua hàng.
                         </p>
                     </div>
                     <div class="col-md-4">
                         <div class="text-center mb-3">
                             <i class="bi bi-lightbulb" style="font-size: 48px; color: #27ae60;"></i>
                         </div>
-                        <h6 class="text-center">3. Goi Y Thong Minh</h6>
+                        <h6 class="text-center">3. Gợi Ý Thông Minh</h6>
                         <p class="small text-muted text-center">
-                            Tao cac goi y san pham dua tren xac suat (confidence) 
-                            khach hang mua san pham lien quan.
+                            Tạo các gợi ý sản phẩm dựa trên xác suất (confidence) 
+                            khách hàng mua sản phẩm liên quan.
                         </p>
                     </div>
                 </div>

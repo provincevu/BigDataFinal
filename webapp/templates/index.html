@@ -4,8 +4,8 @@
 
 {% block content %}
 <div class="page-header">
-    <h2><i class="bi bi-speedometer2 me-2"></i>Dashboard Tong Quan</h2>
-    <p class="text-muted mb-0">Du lieu phan tich tu Hadoop/Spark, luu tru tren MongoDB</p>
+    <h2><i class="bi bi-speedometer2 me-2"></i>Dashboard Tổng Quan</h2>
+    <p class="text-muted mb-0">Dữ liệu phân tích từ Hadoop/Spark, lưu trữ trên MongoDB</p>
 </div>
 
 <!-- Stats Cards -->
@@ -18,7 +18,7 @@
                 </div>
                 <div>
                     <h3 class="mb-0">{{ stats.total_customers }}</h3>
-                    <small class="text-muted">Khach Hang</small>
+                    <small class="text-muted">Khách Hàng</small>
                 </div>
             </div>
         </div>
@@ -31,7 +31,7 @@
                 </div>
                 <div>
                     <h3 class="mb-0">{{ stats.total_products }}</h3>
-                    <small class="text-muted">San Pham</small>
+                    <small class="text-muted">Sản Phẩm</small>
                 </div>
             </div>
         </div>
@@ -44,7 +44,7 @@
                 </div>
                 <div>
                     <h3 class="mb-0">{{ stats.total_transactions }}</h3>
-                    <small class="text-muted">Giao Dich</small>
+                    <small class="text-muted">Giao Dịch</small>
                 </div>
             </div>
         </div>
@@ -68,7 +68,7 @@
     <!-- Segment Distribution Chart -->
     <div class="col-md-6 mb-4">
         <div class="chart-container">
-            <h5 class="mb-3"><i class="bi bi-pie-chart me-2"></i>Phan Bo Phan Khuc Khach Hang</h5>
+            <h5 class="mb-3"><i class="bi bi-pie-chart me-2"></i>Phân Bố Phân Khúc Khách Hàng</h5>
             <canvas id="segmentChart" height="250"></canvas>
         </div>
     </div>
@@ -76,13 +76,13 @@
     <!-- Top Products -->
     <div class="col-md-6 mb-4">
         <div class="table-container">
-            <h5 class="mb-3"><i class="bi bi-trophy me-2"></i>Top 5 San Pham Ban Chay</h5>
+            <h5 class="mb-3"><i class="bi bi-trophy me-2"></i>Top 5 Sản Phẩm Bán Chạy</h5>
             <table class="table table-hover">
                 <thead>
                     <tr>
                         <th>#</th>
-                        <th>Ma SP</th>
-                        <th>Ten San Pham</th>
+                        <th>Mã SP</th>
+                        <th>Tên Sản Phẩm</th>
                         <th class="text-end">Doanh Thu</th>
                     </tr>
                 </thead>
@@ -99,7 +99,7 @@
                     {% endfor %}
                 </tbody>
             </table>
-            <a href="/products" class="btn btn-outline-primary btn-sm">Xem tat ca <i class="bi bi-arrow-right"></i></a>
+            <a href="/products" class="btn btn-outline-primary btn-sm">Xem tất cả <i class="bi bi-arrow-right"></i></a>
         </div>
     </div>
 </div>
@@ -108,7 +108,7 @@
 <div class="row">
     <div class="col-12">
         <div class="table-container">
-            <h5 class="mb-3"><i class="bi bi-collection me-2"></i>Cac Collections Du Lieu</h5>
+            <h5 class="mb-3"><i class="bi bi-collection me-2"></i>Các Collections Dữ Liệu</h5>
             <div class="row">
                 {% for collection in stats.collections %}
                 <div class="col-md-3 mb-2">
