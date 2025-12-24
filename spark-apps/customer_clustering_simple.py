@@ -62,7 +62,7 @@ def calculate_rfm(spark, transactions):
     - Monetary: Tổng chi tiêu
     """
     
-    logger.info("Tính toán RFM metrics...")
+    logger.info("Đang tính toán RFM metrics...")
     
     transactions.createOrReplaceTempView("trans")
     
@@ -138,9 +138,9 @@ def assign_rfm_scores(rfm_df):
 
 
 def assign_customer_segments(rfm_df):
-    """
-    Gán phân khúc khách hàng dựa trên RFM score
-    """
+    
+    # Gán phân khúc khách hàng dựa trên RFM score
+    
     
     logger.info("Phân loại khách hàng theo phân khúc...")
     
