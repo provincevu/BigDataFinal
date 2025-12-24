@@ -77,10 +77,13 @@ echo =====================================================
 echo.
 echo  HADOOP HDFS:
 echo    - NameNode UI:     http://localhost:9870
-echo    - DataNode UI:     http://localhost:9864
+echo    - DataNode 1 UI:     http://localhost:9864
+echo    - DataNode 2 UI:     http://localhost:9865
 echo.
 echo  SPARK:
 echo    - Master UI:       http://localhost:8580
+echo    - Worker 1 UI:     http://localhost:8581
+echo    - Worker 2 UI:     http://localhost:8582
 echo.
 echo  MONGODB:
 echo    - Mongo Express:   http://localhost:8290
@@ -89,11 +92,9 @@ echo.
 echo  WEB APPLICATION:
 echo    - Retail Analytics: http://localhost:5555
 echo.
-echo  JUPYTER NOTEBOOK:
-echo    - JupyterLab:      http://localhost:8889
 echo.
 echo =====================================================
-echo    LENH HAU ICH
+echo    LENH HUU ICH
 echo =====================================================
 echo.
 echo  Xem logs:        docker-compose logs -f

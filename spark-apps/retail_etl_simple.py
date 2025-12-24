@@ -8,6 +8,10 @@ Pipeline đơn giản xử lý dữ liệu bán lẻ:
 """
 
 from pyspark.sql import SparkSession #type: ignore
+from pyspark.sql.types import ( #type: ignore
+    StructType, StructField, StringType, 
+    IntegerType, DoubleType, TimestampType
+)
 from pyspark.sql.functions import ( #type: ignore
     col, sum as spark_sum, count, avg, 
     month, year, dayofweek, hour, 
@@ -17,10 +21,6 @@ from pyspark.sql.functions import ( #type: ignore
     row_number, dense_rank, max as spark_max
 )
 from pyspark.sql.window import Window #type: ignore
-from pyspark.sql.types import ( #type: ignore
-    StructType, StructField, StringType, 
-    IntegerType, DoubleType, TimestampType
-)
 import logging
 
 # Cấu hình logging
@@ -78,12 +78,14 @@ def load_and_clean_data(spark, input_path):
     
     # Làm sạch dữ liệu
     df_cleaned = df \
-        .filter(col("CustomerID").isNotNull()) \
+        .withColumn("CustomerID", 
+            when(col("CustomerID").isNull(), lit("unknown"))
+            .otherwise(col("CustomerID").cast(IntegerType()).cast(StringType()))
+        ) \
         .filter(col("Quantity") > 0) \
         .filter(col("UnitPrice") > 0) \
         .filter(~col("InvoiceNo").startswith("C")) \
         .withColumn("InvoiceDate", to_timestamp(col("InvoiceDate"), "yyyy-MM-dd HH:mm:ss")) \
-        .withColumn("CustomerID", col("CustomerID").cast(IntegerType())) \
         .withColumn("TotalAmount", spark_round(col("Quantity") * col("UnitPrice"), 2)) \
         .withColumn("Description", trim(upper(col("Description")))) \
         .withColumn("Year", year(col("InvoiceDate"))) \

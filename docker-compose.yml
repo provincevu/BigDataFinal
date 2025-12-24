@@ -34,64 +34,24 @@ services:
     depends_on:
       - namenode
 
-  # ==================== HIVE ====================
-  postgres-metastore:
-    image: postgres:11-alpine
-    container_name: postgres-metastore
+  datanode2:
+    image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
+    container_name: datanode2
     restart: unless-stopped
-    environment:
-      POSTGRES_DB: metastore
-      POSTGRES_USER: hive
-      POSTGRES_PASSWORD: hive123
-    command: ["postgres", "-c", "password_encryption=md5"]
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    networks:
-      - bigdata-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U hive -d metastore"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  hive-metastore:
-    image: bde2020/hive:2.3.2-postgresql-metastore
-    container_name: hive-metastore
-    restart: unless-stopped
-    command: /opt/hive/bin/hive --service metastore
-    environment:
-      SERVICE_PRECONDITION: "namenode:9870 datanode:9864 postgres-metastore:5432"
     ports:
-      - "9083:9083"
+      - "9865:9864"
+    environment:
+      SERVICE_PRECONDITION: "namenode:9870"
+    env_file:
+      - ./config/hadoop.env
     volumes:
-      - ./config/hive-site.xml:/opt/hive/conf/hive-site.xml
+      - hadoop_datanode2:/hadoop/dfs/data
     networks:
       - bigdata-network
     depends_on:
-      postgres-metastore:
-        condition: service_healthy
-      namenode:
-        condition: service_started
-      datanode:
-        condition: service_started
+      - namenode
 
-  hive-server:
-    image: bde2020/hive:2.3.2-postgresql-metastore
-    container_name: hive-server
-    restart: unless-stopped
-    environment:
-      SERVICE_PRECONDITION: "hive-metastore:9083"
-    ports:
-      - "10000:10000"
-      - "10002:10002"
-    volumes:
-      - ./config/hive-site.xml:/opt/hive/conf/hive-site.xml
-    networks:
-      - bigdata-network
-    depends_on:
-      - hive-metastore
-
-  # ==================== SPARK ====================
+  # ==================== SPARK CLUSTER ====================
   spark-master:
     image: bde2020/spark-master:3.3.0-hadoop3.3
     container_name: spark-master
@@ -104,13 +64,12 @@ services:
     volumes:
       - ./spark-apps:/spark-apps
       - ./data:/data
-      - ./config/hive-site.xml:/spark/conf/hive-site.xml
     networks:
       - bigdata-network
     depends_on:
       - namenode
       - datanode
-      - hive-metastore
+      - datanode2
 
   spark-worker:
     image: bde2020/spark-worker:3.3.0-hadoop3.3
@@ -122,6 +81,24 @@ services:
       - SPARK_WORKER_MEMORY=2G
     ports:
       - "8581:8081"
+    volumes:
+      - ./spark-apps:/spark-apps
+      - ./data:/data
+    networks:
+      - bigdata-network
+    depends_on:
+      - spark-master
+
+  spark-worker-2:
+    image: bde2020/spark-worker:3.3.0-hadoop3.3
+    container_name: spark-worker-2
+    restart: unless-stopped
+    environment:
+      - SPARK_MASTER=spark://spark-master:7077
+      - SPARK_WORKER_CORES=2
+      - SPARK_WORKER_MEMORY=2G
+    ports:
+      - "8582:8081"
     volumes:
       - ./spark-apps:/spark-apps
       - ./data:/data
@@ -172,44 +149,6 @@ services:
       mongodb:
         condition: service_started
 
-  # ==================== HUE ====================
-  hue:
-    image: gethue/hue:4.10.0
-    container_name: hue
-    restart: unless-stopped
-    ports:
-      - "8788:8888"
-    volumes:
-      - ./config/hue.ini:/usr/share/hue/desktop/conf/hue.ini
-      - ./hue-logs:/var/log/hue
-      - hue_data:/usr/share/hue/desktop
-    networks:
-      - bigdata-network
-    depends_on:
-      - hive-server
-      - namenode
-
-  # ==================== JUPYTER NOTEBOOK ====================
-  jupyter:
-    image: jupyter/pyspark-notebook:spark-3.3.0
-    container_name: jupyter
-    restart: unless-stopped
-    ports:
-      - "8889:8888"
-      - "4040-4045:4040-4045"
-    environment:
-      - JUPYTER_ENABLE_LAB=yes
-      - SPARK_MASTER=spark://spark-master:7077
-    volumes:
-      - ./notebooks:/home/jovyan/work
-      - ./data:/home/jovyan/data
-      - ./spark-apps:/home/jovyan/spark-apps
-    networks:
-      - bigdata-network
-    depends_on:
-      - spark-master
-      - hive-metastore
-
   # ==================== PYTHON WEB APPLICATION ====================
   webapp:
     build:
@@ -239,7 +178,5 @@ networks:
 volumes:
   hadoop_namenode:
   hadoop_datanode:
-  postgres_data:
+  hadoop_datanode2:
   mongodb_data:
-  hue_data:
-  

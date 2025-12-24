@@ -43,9 +43,14 @@ def load_transactions(spark):
     # Tính tổng tiền cho mỗi giao dịch
     df = df.withColumn("TotalAmount", col("Quantity") * col("UnitPrice"))
     
-    # Lọc dữ liệu hợp lệ
+    # Chuyển CustomerID null thành "unknown" thay vì xóa
+    df = df.withColumn("CustomerID", 
+        when(col("CustomerID").isNull(), lit("unknown"))
+        .otherwise(col("CustomerID").cast("string"))
+    )
+    
+    # Lọc dữ liệu hợp lệ (không lọc CustomerID null nữa)
     df = df.filter(
-        (col("CustomerID").isNotNull()) &
         (col("Quantity") > 0) &
         (col("UnitPrice") > 0)
     )
