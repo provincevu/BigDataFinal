@@ -45,6 +45,7 @@ def load_transactions(spark):
     
     # Lọc dữ liệu hợp lệ
     df = df.filter(
+        (col("CustomerID").isNotNull()) &
         (col("Quantity") > 0) &
         (col("UnitPrice") > 0)
     )
