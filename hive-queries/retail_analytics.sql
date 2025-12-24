@@ -1,8 +1,5 @@
--- =====================================================
--- HIVE SQL QUERIES FOR RETAIL ANALYTICS
--- =====================================================
 -- Sử dụng các queries này trong Hue hoặc Hive CLI
--- =====================================================
+
 
 -- Tạo database
 CREATE DATABASE IF NOT EXISTS retail_db;

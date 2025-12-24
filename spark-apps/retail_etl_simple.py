@@ -36,11 +36,11 @@ def create_spark_session():
         .master("local[*]") \
         .config("spark.mongodb.read.connection.uri", "mongodb://admin:admin123@mongodb:27017/retail_analytics?authSource=admin") \
         .config("spark.mongodb.write.connection.uri", "mongodb://admin:admin123@mongodb:27017/retail_analytics?authSource=admin") \
-        .config("spark.driver.memory", "2g") \
+        .config("spark.driver.memory", "4g") \
         .getOrCreate()
     
     spark.sparkContext.setLogLevel("WARN")
-    logger.info("Spark Session created successfully (No Hive)")
+    logger.info("Spark Session được tạo thành công (Không dùng Hive)")
     return spark
 
 
@@ -62,7 +62,7 @@ def define_schema():
 def load_and_clean_data(spark, input_path):
     """Load và làm sạch dữ liệu từ CSV"""
     
-    logger.info(f"📂 Loading data from: {input_path}")
+    logger.info(f"Đang tải dữ liệu từ: {input_path}")
     
     schema = define_schema()
     
@@ -74,7 +74,7 @@ def load_and_clean_data(spark, input_path):
         .csv(input_path)
     
     raw_count = df.count()
-    logger.info(f"📊 Raw records: {raw_count}")
+    logger.info(f"Số bản ghi thô: {raw_count}")
     
     # Làm sạch dữ liệu
     df_cleaned = df \
@@ -92,7 +92,7 @@ def load_and_clean_data(spark, input_path):
         .withColumn("Hour", hour(col("InvoiceDate")))
     
     clean_count = df_cleaned.count()
-    logger.info(f"✅ Cleaned records: {clean_count}")
+    logger.info(f"Đã làm sạch {clean_count} bản ghi")
     
     return df_cleaned
 
@@ -100,20 +100,20 @@ def load_and_clean_data(spark, input_path):
 def save_to_hdfs(df, path):
     """Lưu DataFrame vào HDFS"""
     
-    logger.info(f"💾 Saving data to HDFS: {path}")
+    logger.info(f"Đang lưu dữ liệu vào HDFS: {path}")
     
     df.write \
         .mode("overwrite") \
         .format("parquet") \
         .save(path)
     
-    logger.info(f"✅ Data saved to HDFS successfully")
+    logger.info(f"Đã lưu dữ liệu vào HDFS thành công: {path}")
 
 
 def save_to_mongodb(df, collection_name):
     """Lưu DataFrame vào MongoDB"""
     
-    logger.info(f"📤 Saving to MongoDB: {collection_name}")
+    logger.info(f"Đang lưu vào MongoDB: {collection_name}")
     
     try:
         df.write \
@@ -126,16 +126,16 @@ def save_to_mongodb(df, collection_name):
             .save()
         
         count = df.count()
-        logger.info(f"✅ Saved {count} records to MongoDB: {collection_name}")
+        logger.info(f"Đã lưu {count} bản ghi vào MongoDB: {collection_name}")
     except Exception as e:
-        logger.error(f"❌ Failed to save to MongoDB {collection_name}: {e}")
+        logger.error(f"Lỗi khi lưu vào MongoDB {collection_name}: {e}")
         raise
 
 
 def analyze_revenue(df):
     """Phân tích doanh thu"""
     
-    logger.info("📈 Analyzing revenue...")
+    logger.info("Đang phân tích doanh thu...")
     
     # Monthly revenue
     monthly_revenue = df.groupBy("Year", "Month") \
@@ -146,7 +146,7 @@ def analyze_revenue(df):
         ) \
         .orderBy("Year", "Month")
     
-    # Daily revenue (by day of week)
+    # doanh thu theo ngày trong tuần
     daily_revenue = df.groupBy("DayOfWeek") \
         .agg(
             count("InvoiceNo").alias("TotalOrders"),
@@ -172,7 +172,7 @@ def analyze_revenue(df):
         ) \
         .orderBy("Hour")
     
-    logger.info("✅ Revenue analysis completed")
+    logger.info("Phân tích doanh thu hoàn tất")
     
     return monthly_revenue, daily_revenue, hourly_revenue
 
@@ -180,7 +180,7 @@ def analyze_revenue(df):
 def analyze_products(df, top_n=20):
     """Phân tích sản phẩm bán chạy"""
     
-    logger.info(f"🏆 Analyzing top {top_n} products...")
+    logger.info(f"Đang phân tích top {top_n} sản phẩm...")
     
     # Top by quantity
     top_by_quantity = df.groupBy("StockCode", "Description") \
@@ -203,7 +203,7 @@ def analyze_products(df, top_n=20):
         .orderBy(desc("TotalRevenue")) \
         .limit(top_n)
     
-    logger.info("✅ Product analysis completed")
+    logger.info("Phân tích sản phẩm hoàn tất")
     
     return top_by_quantity, top_by_revenue
 
@@ -211,7 +211,7 @@ def analyze_products(df, top_n=20):
 def analyze_customers(df):
     """Phân tích khách hàng RFM"""
     
-    logger.info("👥 Analyzing customers (RFM)...")
+    logger.info("Đang phân tích khách hàng (RFM)...")
     
     # Lấy ngày cuối cùng
     max_date = df.agg(spark_max("InvoiceDate")).collect()[0][0]
@@ -269,7 +269,7 @@ def analyze_customers(df):
         ) \
         .orderBy(desc("CustomerCount"))
     
-    logger.info("✅ Customer RFM analysis completed")
+    logger.info("Phân tích khách hàng RFM hoàn tất")
     
     return customer_rfm, segment_stats
 
@@ -277,7 +277,7 @@ def analyze_customers(df):
 def analyze_countries(df):
     """Phân tích theo quốc gia"""
     
-    logger.info("🌍 Analyzing countries...")
+    logger.info("Đang phân tích theo quốc gia...")
     
     country_stats = df.groupBy("Country") \
         .agg(
@@ -288,7 +288,7 @@ def analyze_countries(df):
         ) \
         .orderBy(desc("TotalRevenue"))
     
-    logger.info("✅ Country analysis completed")
+    logger.info("Phân tích quốc gia hoàn tất")
     
     return country_stats
 
@@ -296,7 +296,7 @@ def analyze_countries(df):
 def analyze_monthly_trend(df):
     """Phân tích xu hướng theo tháng"""
     
-    logger.info("📊 Analyzing monthly trends...")
+    logger.info("Đang phân tích xu hướng theo tháng...")
     
     monthly_trend = df.groupBy("Year", "Month") \
         .agg(
@@ -306,7 +306,7 @@ def analyze_monthly_trend(df):
         ) \
         .orderBy("Year", "Month")
     
-    logger.info("✅ Monthly trend analysis completed")
+    logger.info("Phân tích xu hướng theo tháng hoàn tất")
     
     return monthly_trend
 
@@ -314,20 +314,20 @@ def analyze_monthly_trend(df):
 def save_transactions_sample(df):
     """Lưu mẫu giao dịch vào MongoDB"""
     
-    logger.info("📤 Saving transaction sample to MongoDB...")
+    logger.info("Đang lưu mẫu giao dịch vào MongoDB...")
     
     # Lấy sample 10000 records để hiển thị
     sample_df = df.limit(10000)
     
     save_to_mongodb(sample_df, "transactions")
     
-    logger.info("✅ Transaction sample saved")
+    logger.info("Mẫu giao dịch đã được lưu")
 
 
 def run_pipeline():
     """Chạy toàn bộ pipeline ETL"""
     
-    logger.info("🚀 Starting Retail Data Pipeline (Simple Version)...")
+    logger.info("Bắt đầu Pipeline xử lý dữ liệu bán lẻ (Phiên bản đơn giản)...")
     logger.info("=" * 60)
     
     # 1. Tạo Spark Session
@@ -343,12 +343,12 @@ def run_pipeline():
         
         # 3. Lưu vào HDFS
         logger.info("=" * 60)
-        logger.info("💾 Saving to HDFS...")
+        logger.info("Đang lưu vào HDFS...")
         save_to_hdfs(df, "hdfs://namenode:9000/user/retail/processed_data")
         
         # 4. Chạy các phân tích
         logger.info("=" * 60)
-        logger.info("🔍 Running Analytics...")
+        logger.info("Đang chạy các phân tích...")
         
         monthly_revenue, daily_revenue, hourly_revenue = analyze_revenue(df)
         top_by_quantity, top_by_revenue = analyze_products(df)
@@ -358,7 +358,7 @@ def run_pipeline():
         
         # 5. Lưu vào MongoDB
         logger.info("=" * 60)
-        logger.info("💾 Saving to MongoDB...")
+        logger.info("Đang lưu vào MongoDB...")
         
         save_to_mongodb(monthly_revenue, "monthly_revenue")
         save_to_mongodb(daily_revenue, "daily_revenue")
@@ -375,28 +375,28 @@ def run_pipeline():
         
         # 6. Tóm tắt
         logger.info("=" * 60)
-        logger.info("✅ Pipeline completed successfully!")
+        logger.info("Pipeline hoàn tất thành công!")
         logger.info("=" * 60)
         
         total_records = df.count()
         total_revenue = df.agg(spark_sum("TotalAmount")).collect()[0][0]
         
-        logger.info(f"\n📋 SUMMARY:")
-        logger.info(f"-" * 40)
-        logger.info(f"📊 Total Records: {total_records:,}")
-        logger.info(f"💰 Total Revenue: £{total_revenue:,.2f}")
-        logger.info(f"\n📁 Data saved to:")
-        logger.info(f"  - HDFS: hdfs://namenode:9000/user/retail/processed_data")
-        logger.info(f"  - MongoDB: retail_analytics database")
+        logger.info("\nTÓM TẮT:")
+        logger.info("-" * 40)
+        logger.info(f"Tổng số bản ghi: {total_records:,}")
+        logger.info(f"Tổng doanh thu: £{total_revenue:,.2f}")
+        logger.info("\nDữ liệu đã được lưu tại:")
+        logger.info("  - HDFS: hdfs://namenode:9000/user/retail/processed_data")
+        logger.info("  - MongoDB: retail_analytics database")
         
     except Exception as e:
-        logger.error(f"❌ Pipeline failed: {e}")
+        logger.error(f"Pipeline thất bại: {e}")
         import traceback
         traceback.print_exc()
         raise
     finally:
         spark.stop()
-        logger.info("🛑 Spark Session stopped")
+        logger.info("Spark Session stopped")
 
 
 if __name__ == "__main__":

@@ -162,7 +162,7 @@ def assign_customer_segments(rfm_df):
             "At Risk"  # Khách hàng có nguy cơ mất
         ).when(
             (col("R_Score") <= 2) & (col("F_Score") <= 2),
-            "Lost Customers"  # Khách hàng đã mất
+            "Lost Customers"  # Khách hàng đã rời đi
         ).when(
             (col("R_Score") >= 3) & (col("M_Score") >= 4),
             "Big Spenders"  # Khách hàng chi tiêu lớn
@@ -277,7 +277,7 @@ def main():
     
     logger.info("")
     logger.info("="*60)
-    logger.info("  CUSTOMER SEGMENTATION ANALYSIS (RFM-Based)")
+    logger.info("  PHÂN TÍCH PHÂN KHÚC KHÁCH HÀNG (DỰA TRÊN RFM)")
     logger.info("="*60)
     logger.info("")
     
@@ -305,7 +305,7 @@ def main():
         
         logger.info("")
         logger.info("="*60)
-        logger.info("  CUSTOMER SEGMENTATION HOÀN TẤT!")
+        logger.info("  PHÂN TÍCH PHÂN KHÚC HOÀN TẤT!")
         logger.info("="*60)
         
     except Exception as e:
