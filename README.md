@@ -22,7 +22,7 @@
 
 ---
 
-## 🎯 TỔNG QUAN DỰ ÁN
+## TỔNG QUAN DỰ ÁN
 
 ### Mục đích
 
@@ -266,10 +266,10 @@ docker-compose logs -f hive-metastore
 
 Pipeline tự động loại bỏ:
 
-- ❌ Bản ghi thiếu CustomerID
-- ❌ Quantity <= 0 (sản phẩm trả lại)
-- ❌ UnitPrice <= 0
-- ❌ InvoiceNo bắt đầu bằng 'C' (đơn hàng hủy)
+- Bản ghi thiếu CustomerID
+- Quantity <= 0 (sản phẩm trả lại)
+- UnitPrice <= 0
+- InvoiceNo bắt đầu bằng 'C' (đơn hàng hủy)
 
 ---
 
