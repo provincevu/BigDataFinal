@@ -1,10 +1,10 @@
-# 🛒 RETAIL BIG DATA PIPELINE
+# RETAIL BIG DATA PIPELINE
 
 ## Hệ Thống Phân Tích Dữ Liệu Bán Lẻ Sử Dụng Công Nghệ Big Data
 
 ---
 
-## 📋 MỤC LỤC
+## MỤC LỤC
 
 1. [Tổng Quan Dự Án](#-tổng-quan-dự-án)
 2. [Kiến Trúc Hệ Thống](#-kiến-trúc-hệ-thống)
@@ -36,15 +36,15 @@ Xây dựng một **Data Pipeline** hoàn chỉnh để phân tích dữ liệu 
 
 ### Đặc điểm nổi bật
 
-- ✅ **Đầy đủ stack Big Data**: Hadoop, Hive, Spark, MongoDB
-- ✅ **Containerized**: Chạy hoàn toàn trên Docker, dễ triển khai
-- ✅ **Interactive UI**: Hue, Jupyter Notebook, Mongo Express
-- ✅ **Real analytics**: RFM Analysis, K-Means Clustering
-- ✅ **Visualization**: Biểu đồ trực quan với Matplotlib/Seaborn
+- **Đầy đủ stack Big Data**: Hadoop, Hive, Spark, MongoDB
+- **Containerized**: Chạy hoàn toàn trên Docker, dễ triển khai
+- **Interactive UI**: Hue, Jupyter Notebook, Mongo Express
+- **Real analytics**: RFM Analysis, K-Means Clustering
+- **Visualization**: Biểu đồ trực quan với Matplotlib/Seaborn
 
 ---
 
-## 🏗️ KIẾN TRÚC HỆ THỐNG
+## KIẾN TRÚC HỆ THỐNG
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
@@ -97,7 +97,7 @@ Xây dựng một **Data Pipeline** hoàn chỉnh để phân tích dữ liệu 
 
 ---
 
-## 🔧 CÔNG NGHỆ SỬ DỤNG
+## CÔNG NGHỆ SỬ DỤNG
 
 | Công nghệ                | Phiên bản | Vai trò                              |
 | ------------------------ | --------- | ------------------------------------ |
@@ -121,7 +121,7 @@ Xây dựng một **Data Pipeline** hoàn chỉnh để phân tích dữ liệu 
 
 ---
 
-## 💻 YÊU CẦU HỆ THỐNG
+## YÊU CẦU HỆ THỐNG
 
 ### Phần cứng
 
@@ -139,14 +139,14 @@ Xây dựng một **Data Pipeline** hoàn chỉnh để phân tích dữ liệu 
 
 ### Hệ điều hành hỗ trợ
 
-- ✅ Windows 10/11 (với WSL2)
-- ✅ macOS 10.15+
-- ✅ Ubuntu 20.04+
-- ✅ CentOS 7+
+- Windows 10/11 (với WSL2)
+- macOS 10.15+
+- Ubuntu 20.04+
+- CentOS 7+
 
 ---
 
-## 🚀 HƯỚNG DẪN CÀI ĐẶT
+## HƯỚNG DẪN CÀI ĐẶT
 
 ### Bước 1: Chuẩn bị thư mục
 
@@ -189,7 +189,7 @@ docker-compose ps
 
 ### Bước 5: Chờ khởi động hoàn tất
 
-⏱️ Lần đầu tiên có thể mất **3-5 phút** để download images và khởi động.
+Lần đầu tiên có thể mất **3-5 phút** để download images và khởi động.
 
 Kiểm tra logs:
 
@@ -200,9 +200,9 @@ docker-compose logs -f hive-metastore
 
 ---
 
-## 📖 HƯỚNG DẪN SỬ DỤNG
+## HƯỚNG DẪN SỬ DỤNG
 
-### 🎯 Cách 1: Sử Dụng Jupyter Notebook (Đề xuất - Nhanh nhất)
+### Cách 1: Sử Dụng Jupyter Notebook (Đề xuất - Nhanh nhất)
 
 1. **Mở trình duyệt**: http://localhost:8889
 2. **Nhập token**: `bigdata2024`
@@ -210,7 +210,7 @@ docker-compose logs -f hive-metastore
 4. **Chạy tất cả cells**: Menu → Run → Run All Cells
 5. **Xem kết quả**: Biểu đồ hiển thị trực tiếp trong notebook
 
-### 🎯 Cách 2: Chạy Spark ETL Pipeline
+### Cách 2: Chạy Spark ETL Pipeline
 
 ```powershell
 # Bước 1: Upload dữ liệu lên HDFS
@@ -223,7 +223,7 @@ docker-compose logs -f hive-metastore
 .\run-clustering.bat
 ```
 
-### 🎯 Cách 3: Sử Dụng Hue (SQL Queries)
+### Cách 3: Sử Dụng Hue (SQL Queries)
 
 1. **Mở trình duyệt**: http://localhost:8788
 2. **Tạo tài khoản**: Lần đầu tự tạo (admin/admin)
@@ -232,7 +232,7 @@ docker-compose logs -f hive-metastore
 
 ---
 
-## 📊 MÔ TẢ DATASET
+## MÔ TẢ DATASET
 
 ### Nguồn dữ liệu
 
@@ -273,9 +273,9 @@ Pipeline tự động loại bỏ:
 
 ---
 
-## 📈 CÁC CHỨC NĂNG PHÂN TÍCH
+## CÁC CHỨC NĂNG PHÂN TÍCH
 
-### 1. 📊 Phân Tích Doanh Thu Theo Thời Gian
+### 1. Phân Tích Doanh Thu Theo Thời Gian
 
 | Phân tích            | Mô tả                                    | Output      |
 | -------------------- | ---------------------------------------- | ----------- |
@@ -286,7 +286,7 @@ Pipeline tự động loại bỏ:
 
 **Insight mẫu**: Tháng 11 có doanh thu cao nhất do mua sắm cuối năm.
 
-### 2. 🏆 Phân Tích Sản Phẩm Bán Chạy
+### 2. Phân Tích Sản Phẩm Bán Chạy
 
 | Phân tích             | Mô tả                                  |
 | --------------------- | -------------------------------------- |
@@ -294,7 +294,7 @@ Pipeline tự động loại bỏ:
 | Top 10 theo số lượng  | Sản phẩm bán được nhiều nhất           |
 | Top theo số đơn hàng  | Sản phẩm xuất hiện nhiều đơn hàng nhất |
 
-### 3. 👥 Phân Tích RFM (Recency-Frequency-Monetary)
+### 3. Phân Tích RFM (Recency-Frequency-Monetary)
 
 **RFM** là phương pháp phân khúc khách hàng dựa trên 3 yếu tố:
 
@@ -308,14 +308,14 @@ Pipeline tự động loại bỏ:
 
 | Segment                   | Mô tả                | Chiến lược                |
 | ------------------------- | -------------------- | ------------------------- |
-| 💎 **Champions**          | R↑ F↑ M↑ - Khách VIP | Giữ chân, ưu đãi đặc biệt |
-| ❤️ **Loyal Customers**    | F↑ M↑                | Upsell, cross-sell        |
-| ⭐ **Potential Loyalist** | R↑ F↓ M↑             | Khuyến khích mua thêm     |
-| 🆕 **Recent Customers**   | R↑                   | Chào đón, giới thiệu SP   |
-| ⚠️ **At Risk**            | R↓ F↑                | Win-back campaign         |
-| 😴 **Lost**               | R↓ F↓ M↓             | Reactivation email        |
+| **Champions**          | R↑ F↑ M↑ - Khách VIP | Giữ chân, ưu đãi đặc biệt |
+| **Loyal Customers**    | F↑ M↑                | Upsell, cross-sell        |
+| **Potential Loyalist** | R↑ F↓ M↑             | Khuyến khích mua thêm     |
+| **Recent Customers**   | R↑                   | Chào đón, giới thiệu SP   |
+| **At Risk**            | R↓ F↑                | Win-back campaign         |
+| **Lost**               | R↓ F↓ M↓             | Reactivation email        |
 
-### 4. 🎯 Phân Cụm Khách Hàng (K-Means Clustering)
+### 4. Phân Cụm Khách Hàng (K-Means Clustering)
 
 Sử dụng thuật toán **K-Means** để nhóm khách hàng có hành vi tương tự:
 
@@ -328,12 +328,12 @@ Sử dụng thuật toán **K-Means** để nhóm khách hàng có hành vi tư�
 
 **Các cluster điển hình:**
 
-- 🔴 **Cluster 0**: VIP Customers - Chi tiêu cao, mua thường xuyên
-- 🔵 **Cluster 1**: Frequent Buyers - Mua nhiều lần, giá trị trung bình
-- 🟢 **Cluster 2**: Regular Customers - Khách hàng bình thường
-- 🟡 **Cluster 3**: Inactive Customers - Đã lâu không mua
+- **Cluster 0**: VIP Customers - Chi tiêu cao, mua thường xuyên
+- **Cluster 1**: Frequent Buyers - Mua nhiều lần, giá trị trung bình
+- **Cluster 2**: Regular Customers - Khách hàng bình thường
+- **Cluster 3**: Inactive Customers - Đã lâu không mua
 
-### 5. 🌍 Phân Tích Theo Địa Lý
+### 5. Phân Tích Theo Địa Lý
 
 - Doanh thu theo quốc gia
 - Số khách hàng theo vùng
@@ -341,7 +341,7 @@ Sử dụng thuật toán **K-Means** để nhóm khách hàng có hành vi tư�
 
 ---
 
-## 📁 CẤU TRÚC THƯ MỤC
+## CẤU TRÚC THƯ MỤC
 
 ```
 BigDataFinal/
@@ -384,7 +384,7 @@ BigDataFinal/
 
 ---
 
-## 📝 CHI TIẾT CÁC FILE
+## CHI TIẾT CÁC FILE
 
 ### docker-compose.yml
 
@@ -436,7 +436,7 @@ Notebook phân tích trực tiếp bằng Pandas (không cần Spark):
 
 ---
 
-## 🌐 TRUY CẬP SERVICES
+## TRUY CẬP SERVICES
 
 | Service                 | URL                   | Dang nhap                |
 | ----------------------- | --------------------- | ------------------------ |
@@ -450,7 +450,7 @@ Notebook phân tích trực tiếp bằng Pandas (không cần Spark):
 
 ---
 
-## 💡 CÁC LỆNH HỮU ÍCH
+## CÁC LỆNH HỮU ÍCH
 
 ### Docker
 
@@ -625,13 +625,13 @@ docker-compose restart jupyter
 
 ---
 
-## 👨‍💻 TÁC GIẢ
+## TÁC GIẢ
 
 **Email**: tinhvu2k4@gmail.com
 
 ---
 
-## 📄 LICENSE
+## LICENSE
 
 MIT License - Có thể sử dụng cho mục đích học tập và nghiên cứu.
 
