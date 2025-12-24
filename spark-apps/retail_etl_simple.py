@@ -98,10 +98,6 @@ def load_and_clean_data(spark, input_path):
 
 
 def save_to_hdfs(df, path):
-    """Lưu DataFrame vào HDFS"""
-    
-    logger.info(f"Đang lưu dữ liệu vào HDFS: {path}")
-    
     df.write \
         .mode("overwrite") \
         .format("parquet") \
@@ -110,10 +106,9 @@ def save_to_hdfs(df, path):
     logger.info(f"Đã lưu dữ liệu vào HDFS thành công: {path}")
 
 
-def save_to_mongodb(df, collection_name):
-    """Lưu DataFrame vào MongoDB"""
-    
-    logger.info(f"Đang lưu vào MongoDB: {collection_name}")
+def save_to_mongodb(df, collection_name):    
+    logger.info(f"Mongodb: {collection_name}")
+    logger.info("-" * 40)
     
     try:
         df.write \
@@ -126,18 +121,16 @@ def save_to_mongodb(df, collection_name):
             .save()
         
         count = df.count()
-        logger.info(f"Đã lưu {count} bản ghi vào MongoDB: {collection_name}")
+        logger.info(f"Đã lưu {count} bản ghi vào MongoDB")
     except Exception as e:
-        logger.error(f"Lỗi khi lưu vào MongoDB {collection_name}: {e}")
+        logger.error(f"Lỗi khi lưu vào MongoDB: {e}")
         raise
 
 
-def analyze_revenue(df):
-    """Phân tích doanh thu"""
-    
+def analyze_revenue(df):    
     logger.info("Đang phân tích doanh thu...")
     
-    # Monthly revenue
+    # theo tháng
     monthly_revenue = df.groupBy("Year", "Month") \
         .agg(
             count("InvoiceNo").alias("TotalOrders"),
@@ -146,25 +139,25 @@ def analyze_revenue(df):
         ) \
         .orderBy("Year", "Month")
     
-    # doanh thu theo ngày trong tuần
+    # theo ngày trong tuần
     daily_revenue = df.groupBy("DayOfWeek") \
         .agg(
             count("InvoiceNo").alias("TotalOrders"),
             spark_round(spark_sum("TotalAmount"), 2).alias("TotalRevenue")
         ) \
         .withColumn("DayName", 
-            when(col("DayOfWeek") == 1, "Sunday")
-            .when(col("DayOfWeek") == 2, "Monday")
-            .when(col("DayOfWeek") == 3, "Tuesday")
-            .when(col("DayOfWeek") == 4, "Wednesday")
-            .when(col("DayOfWeek") == 5, "Thursday")
-            .when(col("DayOfWeek") == 6, "Friday")
-            .when(col("DayOfWeek") == 7, "Saturday")
+            when(col("DayOfWeek") == 1, "Chủ nhật")
+            .when(col("DayOfWeek") == 2, "Thứ hai")
+            .when(col("DayOfWeek") == 3, "Thứ ba")
+            .when(col("DayOfWeek") == 4, "Thứ tư")
+            .when(col("DayOfWeek") == 5, "Thứ năm")
+            .when(col("DayOfWeek") == 6, "Thứ sáu")
+            .when(col("DayOfWeek") == 7, "Thứ bảy")
             .otherwise("Unknown")
         ) \
         .orderBy("DayOfWeek")
     
-    # Hourly revenue
+    # theo giờ
     hourly_revenue = df.groupBy("Hour") \
         .agg(
             count("InvoiceNo").alias("TotalOrders"),
@@ -177,12 +170,10 @@ def analyze_revenue(df):
     return monthly_revenue, daily_revenue, hourly_revenue
 
 
-def analyze_products(df, top_n=20):
-    """Phân tích sản phẩm bán chạy"""
-    
+def analyze_products(df, top_n=20):    
     logger.info(f"Đang phân tích top {top_n} sản phẩm...")
     
-    # Top by quantity
+    # sản phẩm bán chạy nhất theo số lượng
     top_by_quantity = df.groupBy("StockCode", "Description") \
         .agg(
             spark_sum("Quantity").alias("TotalQuantity"),
@@ -192,7 +183,7 @@ def analyze_products(df, top_n=20):
         .orderBy(desc("TotalQuantity")) \
         .limit(top_n)
     
-    # Top by revenue
+    # theo doanh thu
     top_by_revenue = df.groupBy("StockCode", "Description") \
         .agg(
             spark_round(spark_sum("TotalAmount"), 2).alias("TotalRevenue"),
@@ -202,18 +193,14 @@ def analyze_products(df, top_n=20):
         ) \
         .orderBy(desc("TotalRevenue")) \
         .limit(top_n)
-    
-    logger.info("Phân tích sản phẩm hoàn tất")
-    
+        
     return top_by_quantity, top_by_revenue
 
 
-def analyze_customers(df):
-    """Phân tích khách hàng RFM"""
-    
+def analyze_customers(df):    
     logger.info("Đang phân tích khách hàng (RFM)...")
     
-    # Lấy ngày cuối cùng
+    # Lấy ngày cuối cùng mua hàng
     max_date = df.agg(spark_max("InvoiceDate")).collect()[0][0]
     
     # Tính RFM
@@ -224,7 +211,7 @@ def analyze_customers(df):
             spark_max("InvoiceDate").alias("LastPurchase")
         )
     
-    # Add Recency (ngày từ lần mua cuối)
+    # ngày từ lần mua cuối đến ngày lớn nhất trong dữ liệu
     customer_rfm = customer_rfm.withColumn(
         "Recency",
         when(col("LastPurchase").isNotNull(), 
@@ -232,7 +219,7 @@ def analyze_customers(df):
         .otherwise(0)
     )
     
-    # Calculate RFM scores using Window functions
+    # tính điểm RFM (1-5)
     r_window = Window.orderBy(desc("Recency"))
     f_window = Window.orderBy("Frequency")
     m_window = Window.orderBy("Monetary")
@@ -242,13 +229,13 @@ def analyze_customers(df):
         .withColumn("F_Score", ((row_number().over(f_window) - 1) * 5 / customer_rfm.count() + 1).cast(IntegerType())) \
         .withColumn("M_Score", ((row_number().over(m_window) - 1) * 5 / customer_rfm.count() + 1).cast(IntegerType()))
     
-    # Limit scores to 1-5
+    # giới hạn điểm từ 1-5
     customer_rfm = customer_rfm \
         .withColumn("R_Score", when(col("R_Score") > 5, 5).when(col("R_Score") < 1, 1).otherwise(col("R_Score"))) \
         .withColumn("F_Score", when(col("F_Score") > 5, 5).when(col("F_Score") < 1, 1).otherwise(col("F_Score"))) \
         .withColumn("M_Score", when(col("M_Score") > 5, 5).when(col("M_Score") < 1, 1).otherwise(col("M_Score")))
     
-    # Add segment
+    # thêm phân đoạn khách hàng
     customer_rfm = customer_rfm.withColumn(
         "CustomerSegment",
         when((col("R_Score") >= 4) & (col("F_Score") >= 4) & (col("M_Score") >= 4), "Champions")
@@ -259,7 +246,7 @@ def analyze_customers(df):
         .otherwise("Regular")
     )
     
-    # Segment statistics
+    # Thống kê phân đoạn khách hàng
     segment_stats = customer_rfm.groupBy("CustomerSegment") \
         .agg(
             count("*").alias("CustomerCount"),
@@ -268,15 +255,11 @@ def analyze_customers(df):
             spark_round(avg("Recency"), 2).alias("AvgRecency")
         ) \
         .orderBy(desc("CustomerCount"))
-    
-    logger.info("Phân tích khách hàng RFM hoàn tất")
-    
+        
     return customer_rfm, segment_stats
 
 
-def analyze_countries(df):
-    """Phân tích theo quốc gia"""
-    
+def analyze_countries(df):    
     logger.info("Đang phân tích theo quốc gia...")
     
     country_stats = df.groupBy("Country") \
@@ -287,15 +270,11 @@ def analyze_countries(df):
             spark_sum("Quantity").alias("TotalQuantity")
         ) \
         .orderBy(desc("TotalRevenue"))
-    
-    logger.info("Phân tích quốc gia hoàn tất")
-    
+        
     return country_stats
 
 
-def analyze_monthly_trend(df):
-    """Phân tích xu hướng theo tháng"""
-    
+def analyze_monthly_trend(df):    
     logger.info("Đang phân tích xu hướng theo tháng...")
     
     monthly_trend = df.groupBy("Year", "Month") \
@@ -304,16 +283,11 @@ def analyze_monthly_trend(df):
             spark_round(spark_sum("TotalAmount"), 2).alias("TotalRevenue"),
             spark_sum("Quantity").alias("TotalQuantity")
         ) \
-        .orderBy("Year", "Month")
-    
-    logger.info("Phân tích xu hướng theo tháng hoàn tất")
-    
+        .orderBy("Year", "Month")    
     return monthly_trend
 
 
-def save_transactions_sample(df):
-    """Lưu mẫu giao dịch vào MongoDB"""
-    
+def save_transactions_sample(df):    
     logger.info("Đang lưu mẫu giao dịch vào MongoDB...")
     
     # Lấy sample 10000 records để hiển thị
@@ -321,9 +295,6 @@ def save_transactions_sample(df):
     
     save_to_mongodb(sample_df, "transactions")
     
-    logger.info("Mẫu giao dịch đã được lưu")
-
-
 def run_pipeline():
     """Chạy toàn bộ pipeline ETL"""
     
@@ -373,9 +344,8 @@ def run_pipeline():
         # Lưu sample transactions
         save_transactions_sample(df)
         
-        # 6. Tóm tắt
         logger.info("=" * 60)
-        logger.info("Pipeline hoàn tất thành công!")
+        logger.info("Pipeline hoàn tất!")
         logger.info("=" * 60)
         
         total_records = df.count()
@@ -396,7 +366,7 @@ def run_pipeline():
         raise
     finally:
         spark.stop()
-        logger.info("Spark Session stopped")
+        logger.info("Phiên làm việc Spark đã dừng")
 
 
 if __name__ == "__main__":

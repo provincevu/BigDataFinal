@@ -32,9 +32,7 @@ def create_spark_session():
     return spark
 
 
-def load_transactions(spark):
-    """Đọc dữ liệu từ HDFS"""
-    
+def load_transactions(spark):   
     logger.info("Đọc dữ liệu từ HDFS...")
     
     df = spark.read \
@@ -42,12 +40,11 @@ def load_transactions(spark):
         .option("inferSchema", "true") \
         .csv("hdfs://namenode:9000/user/retail/online_retail.csv")
     
-    # Tính TotalAmount
+    # Tính tổng tiền cho mỗi giao dịch
     df = df.withColumn("TotalAmount", col("Quantity") * col("UnitPrice"))
     
     # Lọc dữ liệu hợp lệ
     df = df.filter(
-        (col("CustomerID").isNotNull()) &
         (col("Quantity") > 0) &
         (col("UnitPrice") > 0)
     )
