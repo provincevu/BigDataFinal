@@ -1,0 +1,36 @@
+I. Tổng quan về .NET và C#
+.NET là gì? Nêu các thành phần chính của nền tảng .NET.
+So sánh .NET Framework và .NET Core. Ưu điểm của .NET Core?
+Vai trò của CLR (Common Language Runtime) trong .NET?
+Ngôn ngữ C# có đặc điểm gì nổi bật? Kể tên 3 tính năng hiện đại của C#.
+Base Class Library (BCL) là gì? Cho ví dụ một số namespace quan trọng.
+II. Thiết kế giao diện người dùng (Windows Forms)
+Mô hình lập trình sự kiện (Event-driven programming) là gì? Minh họa bằng ví dụ.
+Các bước tạo ứng dụng Windows Forms đầu tiên trong Visual Studio?
+Kể tên 5 điều khiển cơ bản trong WinForms và chức năng của chúng.
+Sự khác nhau giữa MenuStrip và ContextMenuStrip? Cho ví dụ sử dụng.
+TabControl và TreeView dùng để làm gì trong giao diện nâng cao?
+III. Kiểu dữ liệu và xử lý lỗi trong C#
+Phân biệt kiểu giá trị và kiểu tham chiếu trong C#? Cho ví dụ.
+Nullable type là gì? Cách khai báo và sử dụng?
+Liệt kê các cấu trúc dữ liệu phổ biến trong C#: Array, List, Dictionary.
+Enum là gì? Cho ví dụ khai báo và sử dụng.
+Trình bày cấu trúc try-catch-finally. Nêu 3 loại ngoại lệ thường gặp.
+IV. Lập trình hướng đối tượng với C#
+Property trong C# là gì? So sánh với trường (field).
+Đa hình (Polymorphism) là gì? Phân biệt overloading và overriding.
+Thừa kế (Inheritance) trong C#: cú pháp và vai trò.
+Interface là gì? So sánh Interface với Abstract Class.
+Cho ví dụ minh họa đa hình với lớp Animal, Dog, Cat.
+V. Cơ sở dữ liệu và ADO.NET
+Cơ sở dữ liệu quan hệ là gì? Nêu vai trò của khóa chính và khóa ngoại.
+Liệt kê 4 câu lệnh SQL cơ bản (SELECT, INSERT, UPDATE, DELETE) và ý nghĩa.
+ADO.NET là gì? Các thành phần chính của ADO.NET (Connection, Command, DataReader, DataSet).
+Phân biệt DataReader và DataSet trong ADO.NET.
+Trình bày các bước kết nối C# với SQL Server bằng ADO.NET.
+Hướng dẫn sử dụng
+In ra 2 mặt A4, chia thành 2 cột để dễ nhìn.
+Mỗi câu trả lời chuẩn bị ngắn gọn (2–3 dòng hoặc ví dụ code ngắn).
+Tập trung vào khái niệm, cú pháp, ví dụ thực tế.
+
+

@@ -18,7 +18,7 @@ from pyspark.sql.functions import ( #type: ignore
     when, lit, round as spark_round,
     desc, asc, to_date, to_timestamp,
     regexp_replace, trim, upper,
-    row_number, dense_rank, max as spark_max
+    row_number, dense_rank, max as spark_max, ntile
 )
 from pyspark.sql.window import Window #type: ignore
 import logging
@@ -221,15 +221,20 @@ def analyze_customers(df):
         .otherwise(0)
     )
     
-    # tính điểm RFM (1-5)
-    r_window = Window.orderBy(desc("Recency"))
-    f_window = Window.orderBy("Frequency")
-    m_window = Window.orderBy("Monetary")
+    # Tính điểm RFM sử dụng ntile thay vì row_number để tránh cảnh báo partition
+    # Thêm cột dummy để partition, sau đó dùng ntile chia thành 5 nhóm
+    customer_rfm = customer_rfm.withColumn("_dummy", lit(1))
+    
+    # Sử dụng ntile(5) để chia thành 5 nhóm đều nhau
+    r_window = Window.partitionBy("_dummy").orderBy(desc("Recency"))
+    f_window = Window.partitionBy("_dummy").orderBy("Frequency")
+    m_window = Window.partitionBy("_dummy").orderBy("Monetary")
     
     customer_rfm = customer_rfm \
-        .withColumn("R_Score", ((row_number().over(r_window) - 1) * 5 / customer_rfm.count() + 1).cast(IntegerType())) \
-        .withColumn("F_Score", ((row_number().over(f_window) - 1) * 5 / customer_rfm.count() + 1).cast(IntegerType())) \
-        .withColumn("M_Score", ((row_number().over(m_window) - 1) * 5 / customer_rfm.count() + 1).cast(IntegerType()))
+        .withColumn("R_Score", ntile(5).over(r_window)) \
+        .withColumn("F_Score", ntile(5).over(f_window)) \
+        .withColumn("M_Score", ntile(5).over(m_window)) \
+        .drop("_dummy")
     
     # giới hạn điểm từ 1-5
     customer_rfm = customer_rfm \

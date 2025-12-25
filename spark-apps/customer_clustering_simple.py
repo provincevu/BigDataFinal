@@ -9,7 +9,7 @@ from pyspark.sql import SparkSession #type: ignore
 from pyspark.sql.functions import ( #type: ignore
     col, when, sum as spark_sum, count, avg,
     max as spark_max, min as spark_min,
-    percent_rank, lit, round as spark_round
+    percent_rank, lit, round as spark_round, ntile
 )
 from pyspark.sql.window import Window #type: ignore
 import logging
@@ -94,44 +94,25 @@ def calculate_rfm(spark, transactions):
 
 def assign_rfm_scores(rfm_df):
     """
-    Gán điểm RFM (1-5) dựa trên percentile
+    Gán điểm RFM (1-5) dựa trên ntile để tránh cảnh báo partition
     """
     
     logger.info("Gán điểm RFM (1-5 scale)...")
     
-    # Tạo window cho ranking
-    window = Window.orderBy(col("Recency").desc())
-    rfm_df = rfm_df.withColumn("R_percentile", percent_rank().over(window))
+    # Thêm cột dummy để partition, tránh cảnh báo "No Partition Defined"
+    rfm_df = rfm_df.withColumn("_dummy", lit(1))
     
-    window = Window.orderBy(col("Frequency"))
-    rfm_df = rfm_df.withColumn("F_percentile", percent_rank().over(window))
+    # Sử dụng ntile(5) thay vì percent_rank để chia thành 5 nhóm đều nhau
+    r_window = Window.partitionBy("_dummy").orderBy(col("Recency").desc())
+    f_window = Window.partitionBy("_dummy").orderBy(col("Frequency"))
+    m_window = Window.partitionBy("_dummy").orderBy(col("Monetary"))
     
-    window = Window.orderBy(col("Monetary"))
-    rfm_df = rfm_df.withColumn("M_percentile", percent_rank().over(window))
-    
-    # Gán điểm 1-5 dựa trên percentile
-    rfm_df = rfm_df.withColumn(
-        "R_Score",
-        when(col("R_percentile") >= 0.8, 5)
-        .when(col("R_percentile") >= 0.6, 4)
-        .when(col("R_percentile") >= 0.4, 3)
-        .when(col("R_percentile") >= 0.2, 2)
-        .otherwise(1)
-    ).withColumn(
-        "F_Score",
-        when(col("F_percentile") >= 0.8, 5)
-        .when(col("F_percentile") >= 0.6, 4)
-        .when(col("F_percentile") >= 0.4, 3)
-        .when(col("F_percentile") >= 0.2, 2)
-        .otherwise(1)
-    ).withColumn(
-        "M_Score",
-        when(col("M_percentile") >= 0.8, 5)
-        .when(col("M_percentile") >= 0.6, 4)
-        .when(col("M_percentile") >= 0.4, 3)
-        .when(col("M_percentile") >= 0.2, 2)
-        .otherwise(1)
-    )
+    # ntile(5) chia dữ liệu thành 5 phần đều nhau (1-5)
+    rfm_df = rfm_df \
+        .withColumn("R_Score", ntile(5).over(r_window)) \
+        .withColumn("F_Score", ntile(5).over(f_window)) \
+        .withColumn("M_Score", ntile(5).over(m_window)) \
+        .drop("_dummy")
     
     # Tính RFM Score tổng
     rfm_df = rfm_df.withColumn(
@@ -145,7 +126,6 @@ def assign_rfm_scores(rfm_df):
 def assign_customer_segments(rfm_df):
     
     # Gán phân khúc khách hàng dựa trên RFM score
-    
     
     logger.info("Phân loại khách hàng theo phân khúc...")
     

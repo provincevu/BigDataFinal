@@ -1,67 +1,63 @@
 #!/bin/bash
-# =====================================================
-# RETAIL BIG DATA PIPELINE - STARTUP SCRIPT (Linux/Mac)
-# =====================================================
-
 echo ""
 echo "====================================================="
-echo "   RETAIL BIG DATA PIPELINE - STARTING UP"
+echo "   RETAIL BIG DATA PIPELINE - KHỞI ĐỘNG DỊCH VỤ"
 echo "====================================================="
 echo ""
 
 # Kiểm tra Docker
 if ! docker info > /dev/null 2>&1; then
-    echo "[ERROR] Docker is not running! Please start Docker first."
+    echo "[ERROR] Docker không chạy! Vui lòng khởi động Docker trước."
     exit 1
 fi
 
-echo "[INFO] Docker is running..."
+echo "[INFO] Docker đang chạy..."
 echo ""
 
 # Di chuyển dữ liệu
 mkdir -p data
 if [ -f "online_retail.csv" ]; then
-    echo "[INFO] Moving online_retail.csv to data folder..."
+    echo "[INFO] chuyển online_retail.csv đến thư mục data..."
     cp online_retail.csv data/
 fi
 
 # Tạo thư mục
-echo "[INFO] Creating required directories..."
+echo "[INFO] Đang tạo các thư mục cần thiết..."
 mkdir -p config spark-apps notebooks mongo-init hive-queries
 
 echo ""
-echo "[INFO] Starting Docker Compose services..."
-echo "[INFO] This may take several minutes on first run..."
+echo "[INFO] Bắt đầu chạy dịch vụ Docker Compose..."
+echo "[INFO] Quá trình này có thể mất vài phút khi chạy lần đầu..."
 echo ""
 
 # Start services
 docker-compose up -d
 
 echo ""
-echo "[INFO] Waiting for services to be ready..."
+echo "[INFO] Chờ dịch vụ sẵn sàng..."
 sleep 30
 
 echo ""
 echo "====================================================="
-echo "   SERVICES STARTED SUCCESSFULLY!"
+echo "   DỊCH VỤ ĐÃ KHỞI ĐỘNG THÀNH CÔNG!"
 echo "====================================================="
 echo ""
-echo "Access the following URLs:"
+echo "truy cập các URL sau:"
 echo ""
-echo "  📊 HDFS NameNode:        http://localhost:9870"
-echo "  💾 HDFS DataNode:        http://localhost:9864"
-echo "  ⚡ Spark Master:         http://localhost:8080"
-echo "  ⚡ Spark Worker:         http://localhost:8081"
-echo "  🌐 Hue (Web GUI):        http://localhost:8888"
-echo "  📒 Jupyter Notebook:     http://localhost:8889"
-echo "  🍃 MongoDB Express:      http://localhost:8082"
+echo "  HDFS NameNode:        http://localhost:9870"
+echo "  HDFS DataNode 1:        http://localhost:9864"
+echo "  HDFS DataNode 2:        http://localhost:9865"
+echo "  Spark Master:         http://localhost:8080"
+echo "  Spark Worker 1:         http://localhost:8081"
+echo "  Spark Worker 2:         http://localhost:8083"
+echo "  MongoDB Express:      http://localhost:8082"
 echo ""
-echo "MongoDB Credentials:"
+echo "Thông tin đăng nhập MongoDB:"
 echo "  - Username: admin"
 echo "  - Password: admin123"
 echo ""
 echo "====================================================="
 echo ""
-echo "[TIP] Run 'docker-compose logs -f' to view logs"
-echo "[TIP] Run './stop.sh' to stop all services"
+echo "[TIP] Run 'docker-compose logs -f' để xem logs"
+echo "[TIP] Run './stop.sh' để dừng tất cả dịch vụ"
 echo ""

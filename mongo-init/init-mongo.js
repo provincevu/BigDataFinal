@@ -1,10 +1,10 @@
 // MongoDB Initialization Script
-// Create database and collections for retail analytics
+// Tạo database và các collections cho phân tích bán lẻ
 
-// Switch to retail_analytics database
+// chuyển sang database retail_analytics
 db = db.getSiblingDB('retail_analytics');
 
-// Create collections with schema validation
+// Tạo các collections với xác thực schema
 db.createCollection('transactions', {
     validator: {
         $jsonSchema: {
@@ -38,7 +38,7 @@ db.createCollection('monthly_trend');
 db.createCollection('product_recommendations');
 db.createCollection('product_associations');
 
-// Create indexes for better query performance
+// tạo indexes để hiệu suất truy vấn tốt hơn
 db.transactions.createIndex({ 'CustomerID': 1 });
 db.transactions.createIndex({ 'InvoiceNo': 1 });
 db.transactions.createIndex({ 'StockCode': 1 });
@@ -58,5 +58,5 @@ db.country_performance.createIndex({ 'TotalRevenue': -1 });
 db.product_recommendations.createIndex({ 'CustomerID': 1 });
 db.product_associations.createIndex({ 'CoOccurrence': -1 });
 
-print('✅ MongoDB initialized successfully!');
-print('📊 Collections created: transactions, monthly_revenue, daily_revenue, hourly_revenue, top_products_quantity, top_products_revenue, customer_rfm, customer_segments, customer_clusters, country_performance, monthly_trend, product_recommendations, product_associations');
+print('MongoDB đã được khởi tạo thành công!');
+print('Các collections đã được tạo: transactions, monthly_revenue, daily_revenue, hourly_revenue, top_products_quantity, top_products_revenue, customer_rfm, customer_segments, customer_clusters, country_performance, monthly_trend, product_recommendations, product_associations');

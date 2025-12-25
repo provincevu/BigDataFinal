@@ -1,27 +1,32 @@
 @echo off
 REM =====================================================
-REM CHAY CUSTOMER CLUSTERING/SEGMENTATION
+REM CHAY PRODUCT RECOMMENDATIONS (FP-Growth MLlib)
 REM =====================================================
 echo.
 echo =====================================================
-echo    DANG CHAY CUSTOMER SEGMENTATION (RFM-Based)
+echo    DANG CHAY PRODUCT RECOMMENDATIONS (FP-Growth)
 echo =====================================================
+echo.
+
+echo [INFO] Kiem tra va cai dat (numpy)...
+docker exec spark-master apk add --no-cache py3-numpy >nul 2>&1
+echo [INFO] Dependencies ready.
 echo.
 
 echo [INFO] Dang gui Spark job...
 echo.
 
 docker exec spark-master /spark/bin/spark-submit ^
-    --master spark://spark-master:7077 ^
-    --deploy-mode client ^
-    --driver-memory 2g ^
-    --executor-memory 2g ^
     --packages org.mongodb.spark:mongo-spark-connector_2.12:10.2.1 ^
-    /spark-apps/customer_clustering_simple.py
+    /spark-apps/product_recommendations.py
 
 echo.
 echo =====================================================
-echo    CLUSTERING DA HOAN THANH!
+echo    PRODUCT RECOMMENDATIONS DA HOAN THANH!
 echo =====================================================
+echo.
+echo Ket qua da duoc luu vao:
+echo   - MongoDB: product_associations, product_recommendations
+echo   - HDFS: /user/retail/analysis/product_*
 echo.
 pause

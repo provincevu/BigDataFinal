@@ -102,22 +102,18 @@ Xây dựng một **Data Pipeline** hoàn chỉnh để phân tích dữ liệu 
 | Công nghệ                | Phiên bản | Vai trò                              |
 | ------------------------ | --------- | ------------------------------------ |
 | **Apache Hadoop (HDFS)** | 3.2.1     | Lưu trữ dữ liệu phân tán             |
-| **Apache Hive**          | 2.3.2     | Data Warehouse, SQL queries          |
-| **Apache Spark**         | 3.1.1     | Xử lý dữ liệu & Machine Learning     |
-| **MongoDB**              | 5.0       | NoSQL database cho kết quả phân tích |
-| **PostgreSQL**           | 9.5       | Metastore cho Hive                   |
-| **Hue**                  | 4.10.0    | Web GUI cho Hadoop/Hive              |
-| **Jupyter Notebook**     | Latest    | Interactive data analysis            |
+| **Apache Spark**         | 3.3.0     | Xử lý dữ liệu & Machine Learning     |
+| **MongoDB**              | 6.0       | NoSQL database cho kết quả phân tích |
+| **Flask**                | 3.x       | Web Dashboard Application            |
 | **Docker**               | 20.10+    | Container orchestration              |
-| **Python**               | 3.9       | Scripting, ML algorithms             |
+| **Python**               | 3.9+      | Scripting, ML algorithms             |
 
 ### Thư viện Python sử dụng
 
 - **PySpark**: Xử lý dữ liệu phân tán
-- **Pandas**: Data manipulation
-- **Matplotlib/Seaborn**: Data visualization
-- **Scikit-learn**: Machine Learning (K-Means)
+- **PySpark MLlib**: FP-Growth, K-Means
 - **PyMongo**: Kết nối MongoDB
+- **Flask**: Web Dashboard
 
 ---
 
@@ -221,14 +217,18 @@ docker-compose logs -f hive-metastore
 
 # Bước 3: Chạy Customer Clustering
 .\run-clustering.bat
+
+# Bước 4: Chạy Product Recommendations
+.\run-recommendations.bat
+
+# Bước 5: Khởi động Web Dashboard
+.\run-webapp.bat
 ```
 
-### Cách 3: Sử Dụng Hue (SQL Queries)
+### Cách 3: Truy cập Web Dashboard
 
-1. **Mở trình duyệt**: http://localhost:8788
-2. **Tạo tài khoản**: Lần đầu tự tạo (admin/admin)
-3. **Vào Query Editor**: Chọn Hive
-4. **Chạy queries**: Sử dụng các query trong `hive-queries/retail_analytics.sql`
+1. **Mở trình duyệt**: http://localhost:5000
+2. **Xem các tab**: Dashboard, Clustering, Recommendations, Data
 
 ---
 
@@ -306,8 +306,8 @@ Pipeline tự động loại bỏ:
 
 **Các phân khúc khách hàng:**
 
-| Segment                   | Mô tả                | Chiến lược                |
-| ------------------------- | -------------------- | ------------------------- |
+| Segment                | Mô tả                | Chiến lược                |
+| ---------------------- | -------------------- | ------------------------- |
 | **Champions**          | R↑ F↑ M↑ - Khách VIP | Giữ chân, ưu đãi đặc biệt |
 | **Loyal Customers**    | F↑ M↑                | Upsell, cross-sell        |
 | **Potential Loyalist** | R↑ F↓ M↑             | Khuyến khích mua thêm     |
@@ -339,6 +339,28 @@ Sử dụng thuật toán **K-Means** để nhóm khách hàng có hành vi tư�
 - Số khách hàng theo vùng
 - Thị trường tiềm năng ngoài UK
 
+### 6. Gợi Ý Sản Phẩm (Product Recommendations)
+
+Sử dụng thuật toán **FP-Growth** từ Spark MLlib để:
+
+| Chức năng            | Mô tả                                          |
+| -------------------- | ---------------------------------------------- |
+| Frequent Itemsets    | Tìm các tập sản phẩm thường được mua cùng nhau |
+| Association Rules    | Tạo luật liên kết để gợi ý sản phẩm            |
+| Product Associations | Sản phẩm thường đi kèm nhau                    |
+
+**Cách chạy:**
+
+```powershell
+.\run-recommendations.bat
+```
+
+**Kết quả được lưu vào MongoDB:**
+
+- `frequent_itemsets`: Các tập sản phẩm phổ biến
+- `association_rules`: Luật liên kết
+- `product_associations`: Gợi ý sản phẩm
+
 ---
 
 ## CẤU TRÚC THƯ MỤC
@@ -358,9 +380,9 @@ BigDataFinal/
 │   └── hue.ini                # Cấu hình Hue
 │
 ├── 📁 spark-apps/             # Các ứng dụng Spark
-│   ├── retail_etl_pipeline.py # ETL Pipeline chính
-│   ├── customer_clustering.py # Phân cụm K-Means
-│   └── product_recommendation.py # Hệ thống gợi ý
+│   ├── retail_etl_simple.py   # ETL Pipeline chính
+│   ├── customer_clustering_simple.py # Phân cụm K-Means với RFM
+│   └── product_recommendations.py # Gợi ý sản phẩm FP-Growth
 │
 ├── 📁 notebooks/              # Jupyter Notebooks
 │   ├── retail_analysis.ipynb  # Phân tích với Spark
@@ -379,7 +401,15 @@ BigDataFinal/
 ├── 🔧 stop.bat / stop.sh      # Script dừng
 ├── 🔧 upload-data.bat         # Upload data lên HDFS
 ├── 🔧 run-etl.bat             # Chạy ETL Pipeline
-└── 🔧 run-clustering.bat      # Chạy Clustering
+├── 🔧 run-clustering.bat      # Chạy Clustering
+├── 🔧 run-recommendations.bat # Chạy Product Recommendations
+├── 🔧 run-webapp.bat          # Khởi động Web Dashboard
+│
+└── 📁 webapp/                 # Flask Web Application
+    ├── app.py                 # Flask server
+    ├── Dockerfile             # Docker build file
+    ├── requirements.txt       # Python dependencies
+    └── templates/             # HTML templates
 ```
 
 ---
@@ -390,19 +420,17 @@ BigDataFinal/
 
 Định nghĩa 11 services:
 
-| Service              | Image                                     | Ports      | Mô tả              |
-| -------------------- | ----------------------------------------- | ---------- | ------------------ |
-| `namenode`           | bde2020/hadoop-namenode:2.0.0-hadoop3.2.1 | 9870, 9000 | HDFS Master        |
-| `datanode`           | bde2020/hadoop-datanode:2.0.0-hadoop3.2.1 | 9864       | HDFS Worker        |
-| `hive-metastore`     | bde2020/hive:2.3.2-postgresql-metastore   | 9083       | Hive Metadata      |
-| `hive-server`        | bde2020/hive:2.3.2-postgresql-metastore   | 10000      | Hive Thrift Server |
-| `postgres-metastore` | postgres:9.5                              | 5432       | Metastore DB       |
-| `spark-master`       | bde2020/spark-master:3.1.1-hadoop3.2      | 8080, 7077 | Spark Master       |
-| `spark-worker`       | bde2020/spark-worker:3.1.1-hadoop3.2      | 8081       | Spark Worker       |
-| `mongodb`            | mongo:5.0                                 | 27017      | NoSQL Database     |
-| `mongo-express`      | mongo-express:1.0.0-alpha                 | 8082       | MongoDB UI         |
-| `hue`                | gethue/hue:4.10.0                         | 8888       | Hadoop Web UI      |
-| `jupyter`            | jupyter/pyspark-notebook                  | 8889       | Notebook Server    |
+| Service          | Image                                     | Ports      | Mô tả          |
+| ---------------- | ----------------------------------------- | ---------- | -------------- |
+| `namenode`       | bde2020/hadoop-namenode:2.0.0-hadoop3.2.1 | 9870, 9000 | HDFS Master    |
+| `datanode`       | bde2020/hadoop-datanode:2.0.0-hadoop3.2.1 | 9864       | HDFS Worker    |
+| `datanode2`      | bde2020/hadoop-datanode:2.0.0-hadoop3.2.1 | 9865       | HDFS Worker 2  |
+| `spark-master`   | bde2020/spark-master:3.3.0-hadoop3.3      | 8580, 7777 | Spark Master   |
+| `spark-worker`   | bde2020/spark-worker:3.3.0-hadoop3.3      | 8581       | Spark Worker   |
+| `spark-worker-2` | bde2020/spark-worker:3.3.0-hadoop3.3      | 8582       | Spark Worker 2 |
+| `mongodb`        | mongo:6.0                                 | 27017      | NoSQL Database |
+| `mongo-express`  | mongo-express:1.0.2-20-alpine3.19         | 8290       | MongoDB UI     |
+| `webapp`         | Custom Flask App                          | 5000       | Web Dashboard  |
 
 ### config/hive-site.xml
 
@@ -413,40 +441,47 @@ Cấu hình quan trọng:
 - Timeout settings để tránh lỗi khi xử lý dữ liệu lớn
 - Authentication và transport mode
 
-### spark-apps/retail_etl_pipeline.py
+### spark-apps/retail_etl_simple.py
 
 Pipeline ETL gồm các bước:
 
-1. `create_spark_session()` - Khởi tạo Spark với Hive & MongoDB
-2. `load_and_clean_data()` - Load CSV, làm sạch dữ liệu
-3. `save_to_hdfs()` - Lưu vào HDFS dạng Parquet
-4. `create_hive_tables()` - Tạo bảng trong Hive
-5. `analyze_revenue_by_time()` - Phân tích doanh thu
-6. `analyze_top_products()` - Top sản phẩm
-7. `analyze_customer_behavior()` - Phân tích RFM
-8. `save_to_mongodb()` - Lưu kết quả vào MongoDB
+1. `create_spark_session()` - Khởi tạo Spark với MongoDB Connector
+2. `load_and_clean_data()` - Load CSV từ HDFS, làm sạch dữ liệu
+3. `analyze_revenue_by_time()` - Phân tích doanh thu theo thời gian
+4. `analyze_top_products()` - Top sản phẩm theo doanh thu và số lượng
+5. `analyze_customer_behavior()` - Phân tích RFM
+6. `save_to_mongodb()` - Lưu kết quả vào MongoDB
 
-### notebooks/simple_retail_analysis.ipynb
+### spark-apps/customer_clustering_simple.py
 
-Notebook phân tích trực tiếp bằng Pandas (không cần Spark):
+Phân cụm khách hàng sử dụng K-Means:
 
-- Nhanh hơn, dễ debug
-- Trực quan hóa ngay trong notebook
-- Phù hợp cho demo và học tập
+1. Tính RFM (Recency, Frequency, Monetary) cho từng khách hàng
+2. Chuẩn hóa dữ liệu với StandardScaler
+3. Áp dụng K-Means Clustering (k=4)
+4. Lưu kết quả vào MongoDB
+
+### spark-apps/product_recommendations.py
+
+Gợi ý sản phẩm sử dụng FP-Growth:
+
+1. Chuẩn bị dữ liệu giỏ hàng (basket analysis)
+2. Chạy FP-Growth tìm frequent itemsets
+3. Tạo association rules
+4. Lưu kết quả vào MongoDB
 
 ---
 
 ## TRUY CẬP SERVICES
 
-| Service                 | URL                   | Dang nhap                |
-| ----------------------- | --------------------- | ------------------------ |
-| :chart_with_upwards_trend: **Jupyter Notebook** | http://localhost:8889 | Token: xem docker logs jupyter |
-| :file_folder: **HDFS NameNode**    | http://localhost:9870 | Khong can                |
-| :zap: **Spark Master UI**  | http://localhost:8580 | Khong can                |
-| :mag: **Hue**              | http://localhost:8788 | Tao lan dau: admin/admin |
-| :leaves: **Mongo Express**    | http://localhost:8290 | admin / admin123         |
-| :package: **HDFS DataNode**    | http://localhost:9864 | Khong can                |
-| :wrench: **Spark Worker**     | http://localhost:8581 | Khong can                |
+| Service                | URL                   | Đăng nhập        |
+| ---------------------- | --------------------- | ---------------- |
+| 📊 **Web Dashboard**   | http://localhost:5000 | Không cần        |
+| 📁 **HDFS NameNode**   | http://localhost:9870 | Không cần        |
+| ⚡ **Spark Master UI** | http://localhost:8580 | Không cần        |
+| 🍃 **Mongo Express**   | http://localhost:8290 | admin / admin123 |
+| 📦 **HDFS DataNode**   | http://localhost:9864 | Không cần        |
+| 🔧 **Spark Worker**    | http://localhost:8581 | Không cần        |
 
 ---
 

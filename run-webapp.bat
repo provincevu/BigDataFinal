@@ -4,20 +4,20 @@ REM RUN RETAIL ANALYTICS WEB APPLICATION
 REM =====================================================
 echo.
 echo =====================================================
-echo    STARTING RETAIL ANALYTICS WEB APPLICATION
+echo    BAT DAU KHOI TAO RETAIL WEB APPLICATION
 echo =====================================================
 echo.
 
-echo [INFO] Building and starting webapp container...
+echo [INFO] Dang xay dung va khoi dong container webapp...
 docker-compose up -d --build webapp
 
 echo.
-echo [INFO] Waiting for webapp to start...
+echo [INFO] Dang cho webapp khoi dong...
 timeout /t 10 /nobreak > nul
 
 echo.
 echo =====================================================
-echo    WEB APPLICATION STARTED!
+echo    WEB APPLICATION DA DUOC KHOI DONG!
 echo =====================================================
 echo.
 echo    URL: http://localhost:5000

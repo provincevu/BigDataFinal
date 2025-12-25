@@ -1,14 +1,14 @@
 @echo off
 REM =====================================================
-REM RUN SPARK ETL PIPELINE (Simple Version)
+REM CHAY SPARK ETL PIPELINE
 REM =====================================================
 echo.
 echo =====================================================
-echo    RUNNING SPARK ETL PIPELINE (Simple)
+echo    DANG CHAY SPARK ETL PIPELINE
 echo =====================================================
 echo.
 
-echo [INFO] Submitting Spark job...
+echo [INFO] Dang gui Spark job...
 echo.
 
 docker exec spark-master /spark/bin/spark-submit ^
@@ -17,7 +17,7 @@ docker exec spark-master /spark/bin/spark-submit ^
 
 echo.
 echo =====================================================
-echo    ETL PIPELINE COMPLETED!
+echo    ETL PIPELINE DA HOAN THANH!
 echo =====================================================
 echo.
 pause
