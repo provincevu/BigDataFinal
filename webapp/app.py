@@ -13,6 +13,23 @@ import os
 
 app = Flask(__name__)
 
+# Helper function để chuyển đổi số ngày trong tuần sang tên tiếng Việt
+def get_day_name(day_of_week):
+    """Chuyển đổi số ngày trong tuần sang tên tiếng Việt"""
+    days = {
+        1: "Chủ nhật",
+        2: "Thứ hai", 
+        3: "Thứ ba",
+        4: "Thứ tư",
+        5: "Thứ năm",
+        6: "Thứ sáu",
+        7: "Thứ bảy"
+    }
+    return days.get(day_of_week, "Không xác định")
+
+# Register function để sử dụng trong template
+app.jinja_env.globals.update(get_day_name=get_day_name)
+
 # MongoDB Configuration
 MONGO_URI = os.environ.get('MONGO_URI', 'mongodb://admin:admin123@mongodb:27017/?authSource=admin')
 DATABASE_NAME = 'retail_analytics'
@@ -199,6 +216,61 @@ def recommendations():
     return render_template('recommendations.html',
                          associations=parse_json(associations),
                          recommendations=parse_json(recs))
+
+
+# ==================== GIAO DICH ====================
+@app.route('/transactions')
+def transactions():
+    """Trang danh sách giao dịch với phân trang và lọc"""
+    db = get_db()
+    
+    # Phân trang
+    page = request.args.get('page', 1, type=int)
+    per_page = 20
+    skip = (page - 1) * per_page
+    
+    # Sắp xếp theo TotalAmount
+    sort_order = request.args.get('sort', 'desc')
+    sort_direction = -1 if sort_order == 'desc' else 1
+    
+    # Lấy dữ liệu giao dịch
+    transactions_list = list(
+        db.transactions.find()
+        .sort('TotalAmount', sort_direction)
+        .skip(skip)
+        .limit(per_page)
+    )
+    
+    # Tổng số giao dịch
+    total = db.transactions.count_documents({})
+    total_pages = (total + per_page - 1) // per_page
+    
+    # Thống kê top 1000 giao dịch lớn nhất theo khung giờ
+    top_1000 = list(db.transactions.find().sort('TotalAmount', -1).limit(1000))
+    
+    # Tính phân bố theo giờ
+    hourly_distribution = {}
+    top1000_total = 0
+    for t in top_1000:
+        hour = t.get('Hour', 0)
+        hourly_distribution[hour] = hourly_distribution.get(hour, 0) + 1
+        top1000_total += t.get('TotalAmount', 0)
+    
+    # Tìm khung giờ cao điểm
+    peak_hour = max(hourly_distribution, key=hourly_distribution.get) if hourly_distribution else 0
+    top1000_avg = top1000_total / len(top_1000) if top_1000 else 0
+    
+    return render_template('transactions.html',
+                         transactions=parse_json(transactions_list),
+                         page=page,
+                         per_page=per_page,
+                         total=total,
+                         total_pages=total_pages,
+                         sort_order=sort_order,
+                         hourly_distribution=hourly_distribution,
+                         peak_hour=peak_hour,
+                         top1000_total=top1000_total,
+                         top1000_avg=top1000_avg)
 
 
 # ==================== API ENDPOINTS ====================

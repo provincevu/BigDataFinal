@@ -1,0 +1,237 @@
+{% extends 'base.html' %}
+
+{% block title %}Giao Dịch - Retail Analytics{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2><i class="bi bi-receipt-cutoff me-2"></i>Danh Sách Giao Dịch</h2>
+    <p class="text-muted mb-0">Tất cả các giao dịch được xử lý từ Hadoop/Spark</p>
+</div>
+
+<div class="row">
+    <!-- Bộ lọc và sắp xếp -->
+    <div class="col-12 mb-4">
+        <div class="card">
+            <div class="card-body">
+                <form method="GET" action="/transactions" class="row g-3 align-items-end">
+                    <div class="col-md-3">
+                        <label class="form-label"><i class="bi bi-sort-alpha-down me-1"></i>Sắp xếp theo Giá trị</label>
+                        <select name="sort" class="form-select">
+                            <option value="desc" {% if sort_order == 'desc' %}selected{% endif %}>Giảm dần (Cao → Thấp)</option>
+                            <option value="asc" {% if sort_order == 'asc' %}selected{% endif %}>Tăng dần (Thấp → Cao)</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="bi bi-funnel me-1"></i>Áp dụng
+                        </button>
+                    </div>
+                    <div class="col-md-7 text-end">
+                        <span class="badge bg-info fs-6">
+                            <i class="bi bi-database me-1"></i>Tổng: {{ total }} giao dịch
+                        </span>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Bảng giao dịch -->
+    <div class="col-md-8 mb-4">
+        <div class="table-container">
+            <h5 class="mb-3">
+                <i class="bi bi-list-ul me-2"></i>Giao Dịch 
+                <span class="text-muted">(Trang {{ page }} / {{ total_pages }})</span>
+            </h5>
+            <div class="table-responsive">
+                <table class="table table-hover table-striped">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>#</th>
+                            <th>Mã Hóa Đơn</th>
+                            <th>Khách Hàng</th>
+                            <th>Quốc Gia</th>
+                            <th class="text-end">Tổng Tiền</th>
+                            <th>Số SP</th>
+                            <th>Thời Gian</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for t in transactions %}
+                        <tr>
+                            <td>{{ (page - 1) * per_page + loop.index }}</td>
+                            <td><code class="text-primary">{{ t.InvoiceNo }}</code></td>
+                            <td>
+                                {% if t.CustomerID and t.CustomerID != 'unknown' %}
+                                <a href="/customer/{{ t.CustomerID }}" class="text-decoration-none">
+                                    <i class="bi bi-person me-1"></i>{{ t.CustomerID }}
+                                </a>
+                                {% else %}
+                                <span class="text-muted">Không xác định</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary">{{ t.Country }}</span>
+                            </td>
+                            <td class="text-end">
+                                <strong class="text-success">£{{ "%.2f"|format(t.TotalAmount or 0) }}</strong>
+                            </td>
+                            <td>
+                                <span class="badge bg-info">{{ t.TotalItems or 0 }} SP</span>
+                            </td>
+                            <td>
+                                <small>
+                                    <i class="bi bi-calendar me-1"></i>{{ t.Year }}/{{ t.Month }}<br>
+                                    <i class="bi bi-clock me-1"></i>{{ t.Hour }}:00 - {{ get_day_name(t.DayOfWeek) }}
+                                </small>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Phân trang -->
+            <nav aria-label="Điều hướng trang" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if page > 1 %}
+                    <li class="page-item">
+                        <a class="page-link" href="/transactions?page=1&sort={{ sort_order }}">
+                            <i class="bi bi-chevron-double-left"></i>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="/transactions?page={{ page - 1 }}&sort={{ sort_order }}">
+                            <i class="bi bi-chevron-left"></i> Trước
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for p in range([1, page - 2]|max, [total_pages + 1, page + 3]|min) %}
+                    <li class="page-item {% if p == page %}active{% endif %}">
+                        <a class="page-link" href="/transactions?page={{ p }}&sort={{ sort_order }}">{{ p }}</a>
+                    </li>
+                    {% endfor %}
+                    
+                    {% if page < total_pages %}
+                    <li class="page-item">
+                        <a class="page-link" href="/transactions?page={{ page + 1 }}&sort={{ sort_order }}">
+                            Sau <i class="bi bi-chevron-right"></i>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="/transactions?page={{ total_pages }}&sort={{ sort_order }}">
+                            <i class="bi bi-chevron-double-right"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+    </div>
+    
+    <!-- Thống kê Top 1000 giao dịch -->
+    <div class="col-md-4 mb-4">
+        <div class="card mt-3">
+            <div class="card-body">
+                <h6 class="card-title"><i class="bi bi-info-circle me-2"></i>Thông Tin Thống Kê</h6>
+                <ul class="list-unstyled mb-0">
+                    <li class="mb-2">
+                        <i class="bi bi-clock-fill text-primary me-2"></i>
+                        <strong>Khung giờ cao điểm:</strong> 
+                        <span class="badge bg-success">{{ peak_hour }}:00</span>
+                    </li>
+                    <li class="mb-2">
+                        <i class="bi bi-currency-pound text-success me-2"></i>
+                        <strong>Tổng giá trị Top 1000:</strong> 
+                        <span>£{{ "%.2f"|format(top1000_total or 0) }}</span>
+                    </li>
+                    <li>
+                        <i class="bi bi-calculator text-warning me-2"></i>
+                        <strong>Trung bình/giao dịch:</strong> 
+                        <span>£{{ "%.2f"|format(top1000_avg or 0) }}</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Dữ liệu phân bố theo giờ
+const hourlyData = {{ hourly_distribution | tojson | safe }};
+
+// Tạo labels và values cho biểu đồ
+const hours = Array.from({length: 24}, (_, i) => i + ':00');
+const values = hours.map((_, i) => hourlyData[i] || 0);
+
+// Tìm giờ cao điểm để highlight
+const maxValue = Math.max(...values);
+const colors = values.map(v => v === maxValue ? 'rgba(40, 167, 69, 0.8)' : 'rgba(54, 162, 235, 0.6)');
+const borderColors = values.map(v => v === maxValue ? 'rgba(40, 167, 69, 1)' : 'rgba(54, 162, 235, 1)');
+
+// Vẽ biểu đồ
+const ctx = document.getElementById('hourlyDistributionChart').getContext('2d');
+new Chart(ctx, {
+    type: 'bar',
+    data: {
+        labels: hours,
+        datasets: [{
+            label: 'Số giao dịch',
+            data: values,
+            backgroundColor: colors,
+            borderColor: borderColors,
+            borderWidth: 1
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                display: false
+            },
+            tooltip: {
+                callbacks: {
+                    title: function(context) {
+                        return 'Khung giờ ' + context[0].label;
+                    },
+                    label: function(context) {
+                        return context.raw + ' giao dịch';
+                    }
+                }
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                title: {
+                    display: true,
+                    text: 'Số giao dịch'
+                }
+            },
+            x: {
+                title: {
+                    display: true,
+                    text: 'Giờ trong ngày'
+                },
+                ticks: {
+                    maxRotation: 45,
+                    minRotation: 45
+                }
+            }
+        }
+    }
+});
+</script>
+{% endblock %}
+
+<style>
+    .table-container {
+        max-height: 600px !important; /* Đảm bảo giới hạn chiều cao bảng */
+        overflow-y: auto !important; /* Thêm thanh cuộn dọc nếu cần */
+        display: block; /* Đảm bảo bảng không bị ảnh hưởng bởi các lớp khác */
+    }
+</style>

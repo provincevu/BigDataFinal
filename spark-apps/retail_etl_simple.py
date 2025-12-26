@@ -93,6 +93,31 @@ def load_and_clean_data(spark, input_path):
         .withColumn("DayOfWeek", dayofweek(col("InvoiceDate"))) \
         .withColumn("Hour", hour(col("InvoiceDate")))
     
+    # Xử lý Primary Key: (InvoiceNo, StockCode) phải duy nhất
+    # Nếu có duplicate, gộp lại bằng cách cộng Quantity và TotalAmount
+    before_dedup = df_cleaned.count()
+    
+    # Sử dụng Window để xác định bản ghi đầu tiên trong mỗi nhóm (InvoiceNo, StockCode)
+    pk_window = Window.partitionBy("InvoiceNo", "StockCode").orderBy("InvoiceDate")
+    df_cleaned = df_cleaned.withColumn("_row_num", row_number().over(pk_window))
+    
+    # Tính tổng Quantity và TotalAmount cho mỗi cặp (InvoiceNo, StockCode)
+    agg_df = df_cleaned.groupBy("InvoiceNo", "StockCode") \
+        .agg(
+            spark_sum("Quantity").alias("TotalQuantity"),
+            spark_sum("TotalAmount").alias("TotalAmountSum")
+        )
+    
+    # Lấy bản ghi đầu tiên và join với aggregate
+    df_cleaned = df_cleaned.filter(col("_row_num") == 1).drop("_row_num")
+    df_cleaned = df_cleaned.drop("Quantity", "TotalAmount") \
+        .join(agg_df, ["InvoiceNo", "StockCode"], "inner") \
+        .withColumnRenamed("TotalQuantity", "Quantity") \
+        .withColumnRenamed("TotalAmountSum", "TotalAmount")
+    
+    after_dedup = df_cleaned.count()
+    logger.info(f"Đã xử lý Primary Key (InvoiceNo, StockCode): {before_dedup} -> {after_dedup} bản ghi (loại bỏ {before_dedup - after_dedup} bản ghi trùng)")
+    
     clean_count = df_cleaned.count()
     logger.info(f"Đã làm sạch {clean_count} bản ghi")
     
@@ -295,12 +320,21 @@ def analyze_monthly_trend(df):
 
 
 def save_transactions_sample(df):    
-    logger.info("Đang lưu mẫu giao dịch vào MongoDB...")
+    logger.info("Đang lưu tất cả giao dịch (unique theo InvoiceNo) vào MongoDB...")
     
-    # Lấy sample 10000 records để hiển thị
-    sample_df = df.limit(10000)
+    # Gộp tất cả sản phẩm trong cùng 1 hóa đơn thành 1 giao dịch duy nhất
+    # Mỗi InvoiceNo là 1 giao dịch với tổng TotalAmount của tất cả sản phẩm
+    transactions_df = df.groupBy("InvoiceNo", "CustomerID", "Country", "Year", "Month", "DayOfWeek", "Hour") \
+        .agg(
+            spark_sum("TotalAmount").alias("TotalAmount"),
+            count("StockCode").alias("TotalItems"),
+            spark_sum("Quantity").alias("TotalQuantity")
+        ) \
+        .withColumn("TotalAmount", spark_round(col("TotalAmount"), 2))
     
-    save_to_mongodb(sample_df, "transactions")
+    logger.info(f"Tổng số giao dịch unique: {transactions_df.count()}")
+    
+    save_to_mongodb(transactions_df, "transactions")
     
 def run_pipeline():
     """Chạy toàn bộ pipeline ETL"""

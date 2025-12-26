@@ -1,0 +1,231 @@
+================================================================================
+                     TRẢ LỜI CÂU HỎI VÀ TỔNG HỢP CÁC THAY ĐỔI
+                     Big Data Project - Retail Analytics
+================================================================================
+
+Ngày thực hiện: 26/12/2025
+
+================================================================================
+                          CÁC THAY ĐỔI ĐÃ THỰC HIỆN
+================================================================================
+
+1. XỬ LÝ PRIMARY KEY (InvoiceNo, StockCode)
+--------------------------------------------------------------------------------
+Vị trí: spark-apps/retail_etl_simple.py (hàm load_and_clean_data)
+
+Vấn đề: Trong dữ liệu gốc, có thể có nhiều bản ghi với cùng cặp (InvoiceNo, 
+StockCode). Điều này không hợp lý vì mỗi sản phẩm (StockCode) chỉ nên xuất 
+hiện 1 lần trong 1 hóa đơn (InvoiceNo).
+
+Giải pháp:
+- Sử dụng Window function để nhóm các bản ghi theo (InvoiceNo, StockCode)
+- Với các bản ghi trùng lặp:
+  + Cộng dồn Quantity và TotalAmount
+  + Giữ lại thông tin của bản ghi đầu tiên (theo InvoiceDate)
+- Log ra số lượng bản ghi đã gộp để tracking
+
+Code thêm:
+```python
+pk_window = Window.partitionBy("InvoiceNo", "StockCode").orderBy("InvoiceDate")
+df_cleaned = df_cleaned.withColumn("_row_num", row_number().over(pk_window))
+
+agg_df = df_cleaned.groupBy("InvoiceNo", "StockCode") \
+    .agg(
+        spark_sum("Quantity").alias("TotalQuantity"),
+        spark_sum("TotalAmount").alias("TotalAmountSum")
+    )
+
+df_cleaned = df_cleaned.filter(col("_row_num") == 1).drop("_row_num")
+df_cleaned = df_cleaned.drop("Quantity", "TotalAmount") \
+    .join(agg_df, ["InvoiceNo", "StockCode"], "inner") \
+    .withColumnRenamed("TotalQuantity", "Quantity") \
+    .withColumnRenamed("TotalAmountSum", "TotalAmount")
+```
+
+--------------------------------------------------------------------------------
+
+2. SỬA HÀM save_transactions_sample()
+--------------------------------------------------------------------------------
+Vị trí: spark-apps/retail_etl_simple.py (dòng 297-311)
+
+Trước đây: Hàm chỉ lấy 10,000 bản ghi đầu tiên và lưu vào MongoDB
+
+Sau khi sửa: 
+- Gộp tất cả sản phẩm trong cùng 1 hóa đơn thành 1 giao dịch duy nhất
+- Mỗi InvoiceNo là 1 giao dịch với các trường:
+  + InvoiceNo (Primary Key - duy nhất)
+  + CustomerID
+  + Country
+  + TotalAmount (tổng tiền của tất cả sản phẩm trong hóa đơn)
+  + TotalItems (số lượng loại sản phẩm)
+  + TotalQuantity (tổng số lượng tất cả sản phẩm)
+  + Year, Month, DayOfWeek, Hour (thông tin thời gian)
+
+--------------------------------------------------------------------------------
+
+3. TẠO TRANG GIAO DỊCH (TRANSACTIONS)
+--------------------------------------------------------------------------------
+Các file đã tạo/sửa:
+- webapp/templates/transactions.html (MỚI)
+- webapp/app.py (thêm route /transactions)
+- webapp/templates/base.html (thêm menu Giao Dịch)
+
+Tính năng:
+a) Phân trang: 20 giao dịch/trang, có nút chuyển trang
+b) Sắp xếp: Theo TotalAmount tăng dần hoặc giảm dần
+c) Thống kê Top 1000 giao dịch lớn nhất:
+   - Biểu đồ phân bố theo khung giờ
+   - Hiển thị khung giờ cao điểm
+   - Tổng giá trị và trung bình
+d) Hiển thị thông tin: InvoiceNo, CustomerID, Country, TotalAmount, 
+   TotalItems, thời gian (Year/Month/DayOfWeek/Hour)
+
+================================================================================
+                     TRẢ LỜI CÂU HỎI 4: BRING COMPUTATION TO DATA
+================================================================================
+
+CÂU TRẢ LỜI: CÓ, dự án này SỬ DỤNG cơ chế "Bring Computation to Data"
+
+GIẢI THÍCH CHI TIẾT:
+
+1. NGUYÊN LÝ "BRING COMPUTATION TO DATA":
+   - Thay vì di chuyển dữ liệu về nơi tính toán (truyền thống)
+   - Ta di chuyển code/logic xử lý đến nơi lưu trữ dữ liệu
+   - Giảm thiểu network I/O, tăng hiệu suất
+
+2. BẰNG CHỨNG TRONG DỰ ÁN:
+
+   a) HDFS + Spark Integration:
+      - Dữ liệu được lưu trên HDFS (phân tán trên datanode, datanode2)
+      - Spark workers nằm cùng network với các datanodes
+      - Khi xử lý, Spark cố gắng schedule task trên node có dữ liệu
+      - File: docker-compose.yml - tất cả trong bigdata-network
+
+   b) Data Locality:
+      - HDFS block size mặc định: 128MB
+      - Spark biết vị trí block trên datanode nào
+      - Ưu tiên chạy task trên node có dữ liệu (NODE_LOCAL)
+      - Nếu không được thì RACK_LOCAL, cuối cùng là ANY
+
+   c) Cấu hình trong hadoop.env:
+      ```
+      HDFS_CONF_dfs_replication=2
+      ```
+      - Dữ liệu được replicate 2 bản trên 2 datanode
+      - Spark có 2 lựa chọn để schedule task gần dữ liệu
+
+   d) Spark Processing:
+      - spark-apps/*.py chứa logic xử lý
+      - Logic này được gửi đến Spark workers
+      - Workers xử lý dữ liệu tại chỗ trên HDFS
+      - Chỉ kết quả (đã aggregate) được gửi về driver/MongoDB
+
+3. KHÔNG CÓ BẰNG CHỨNG:
+   - Không di chuyển toàn bộ dữ liệu về 1 node để xử lý
+   - Không có central processing node đọc toàn bộ data từ HDFS
+
+================================================================================
+                TRẢ LỜI CÂU HỎI 5: SPARK WORKER ĐỌC DỮ LIỆU NHƯ THẾ NÀO?
+================================================================================
+
+KIẾN TRÚC TRONG DỰ ÁN:
+- 2 Datanode: datanode, datanode2
+- 2 Spark Worker: spark-worker, spark-worker-2
+- Replication factor = 2 (mỗi block có 2 bản copy)
+
+CƠ CHẾ ĐỌC DỮ LIỆU:
+
+1. PHÂN CHIA DỮ LIỆU:
+   - File CSV được chia thành các block (mỗi block ~128MB)
+   - Mỗi block có 2 replica trên 2 datanode khác nhau
+   - Ví dụ: Block 1 có thể ở datanode + datanode2
+
+2. SPARK SCHEDULING:
+   - Spark Master nhận job từ driver
+   - Master chia job thành các task (mỗi partition = 1 task)
+   - Master biết vị trí block từ Namenode metadata
+
+3. DATA LOCALITY PREFERENCE:
+   a) PROCESS_LOCAL: Dữ liệu đã trong memory (cache)
+   b) NODE_LOCAL: Dữ liệu trên cùng node với executor
+   c) RACK_LOCAL: Dữ liệu trên cùng rack
+   d) ANY: Dữ liệu ở node khác
+
+4. CÁCH 2 WORKER LẤY DỮ LIỆU:
+
+   Scenario A - Lý tưởng (NODE_LOCAL):
+   ┌─────────────────┐    ┌─────────────────┐
+   │  spark-worker   │    │ spark-worker-2  │
+   │                 │    │                 │
+   │  Task 1,3,5...  │    │  Task 2,4,6...  │
+   └────────┬────────┘    └────────┬────────┘
+            │                      │
+            ▼                      ▼
+   ┌─────────────────┐    ┌─────────────────┐
+   │    datanode     │    │    datanode2    │
+   │  Block 1,3,5... │    │  Block 2,4,6... │
+   └─────────────────┘    └─────────────────┘
+   
+   Mỗi worker đọc từ datanode gần nhất (ít network I/O)
+
+   Scenario B - Thực tế (Docker environment):
+   - Trong Docker, các container trên cùng host
+   - Network giữa các container rất nhanh
+   - Vẫn cố gắng NODE_LOCAL nhưng không nghiêm ngặt
+
+5. ĐỌC SONG SONG:
+   CÓ! Các worker đọc SONG SONG:
+   
+   - Mỗi task đọc 1 partition độc lập
+   - Worker 1 đọc partition 0,2,4... đồng thời
+   - Worker 2 đọc partition 1,3,5... đồng thời
+   - Không chờ đợi lẫn nhau
+   
+   Cấu hình worker:
+   ```yaml
+   SPARK_WORKER_CORES=2
+   SPARK_WORKER_MEMORY=2G
+   ```
+   - Mỗi worker có 2 cores = có thể chạy 2 task đồng thời
+   - Tổng: 4 task chạy đồng thời trên 2 workers
+
+6. QUÁ TRÌNH XỬ LÝ THỰC TẾ:
+
+   Bước 1: Driver gửi job đến Spark Master
+   Bước 2: Master allocate executors trên workers
+   Bước 3: Driver lấy metadata từ Namenode (vị trí block)
+   Bước 4: Driver schedule task dựa trên data locality
+   Bước 5: Workers nhận task và đọc data từ HDFS
+   Bước 6: Workers xử lý song song, shuffle nếu cần
+   Bước 7: Kết quả gửi về driver hoặc lưu MongoDB/HDFS
+
+================================================================================
+                           LƯU Ý QUAN TRỌNG
+================================================================================
+
+1. SAU KHI THAY ĐỔI CODE:
+   - Cần rebuild và restart webapp container:
+     docker-compose up -d --build webapp
+   
+   - Cần chạy lại ETL để cập nhật MongoDB:
+     run-etl.bat
+
+2. KIỂM TRA DỮ LIỆU:
+   - Vào Mongo Express: http://localhost:8290
+   - Database: retail_analytics
+   - Collection: transactions
+   - Kiểm tra mỗi InvoiceNo chỉ có 1 document
+
+3. TRANG MỚI:
+   - Truy cập: http://localhost:5000/transactions
+   - Kiểm tra phân trang hoạt động
+   - Kiểm tra biểu đồ phân bố theo giờ
+
+4. GIÁM SÁT:
+   - Spark Master UI: http://localhost:8580
+   - Xem workers và jobs đang chạy
+   - Kiểm tra data locality trong Stages
+
+================================================================================
+                              KẾT THÚC
+================================================================================
