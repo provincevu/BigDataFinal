@@ -1,10 +1,10 @@
 """
-Retail Data ETL Pipeline - Simple Version (No Hive)
+Retail Data ETL Pipeline - Simple Version 
 ===================================================
 Pipeline đơn giản xử lý dữ liệu bán lẻ:
 1. Load dữ liệu từ CSV
 2. Xử lý và làm sạch dữ liệu
-3. Lưu vào HDFS và MongoDB trực tiếp (không cần Hive)
+3. Lưu vào HDFS và MongoDB trực tiếp
 """
 
 from pyspark.sql import SparkSession #type: ignore
@@ -40,7 +40,7 @@ def create_spark_session():
         .getOrCreate()
     
     spark.sparkContext.setLogLevel("WARN")
-    logger.info("Spark Session được tạo thành công (Không dùng Hive)")
+    logger.info("Spark Session được tạo thành công")
     return spark
 
 

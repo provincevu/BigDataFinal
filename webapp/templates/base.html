@@ -138,35 +138,35 @@
                 </div>
                 <nav class="nav flex-column mt-3">
                     <a class="nav-link {% if request.endpoint == 'index' %}active{% endif %}" href="/">
-                        <i class="bi bi-speedometer2"></i> Dashboard
+                        <i class="bi bi-speedometer2"></i> Tổng Quan
                     </a>
                     <a class="nav-link {% if request.endpoint == 'customers' or request.endpoint == 'customer_detail' %}active{% endif %}" href="/customers">
-                        <i class="bi bi-people"></i> Khach Hang
+                        <i class="bi bi-people"></i> Khách Hàng
                     </a>
                     <a class="nav-link {% if request.endpoint == 'segments' %}active{% endif %}" href="/segments">
-                        <i class="bi bi-diagram-3"></i> Phan Khuc
+                        <i class="bi bi-diagram-3"></i> Phân Khúc
                     </a>
                     <a class="nav-link {% if request.endpoint == 'products' %}active{% endif %}" href="/products">
-                        <i class="bi bi-box-seam"></i> San Pham
+                        <i class="bi bi-box-seam"></i> Sản Phẩm
                     </a>
                     <a class="nav-link {% if request.endpoint == 'revenue' %}active{% endif %}" href="/revenue">
                         <i class="bi bi-currency-dollar"></i> Doanh Thu
                     </a>
                     <a class="nav-link {% if request.endpoint == 'countries' %}active{% endif %}" href="/countries">
-                        <i class="bi bi-globe"></i> Quoc Gia
+                        <i class="bi bi-globe"></i> Quốc Gia
                     </a>
                     <a class="nav-link {% if request.endpoint == 'transactions' %}active{% endif %}" href="/transactions">
-                        <i class="bi bi-receipt-cutoff"></i> Giao Dich
+                        <i class="bi bi-receipt-cutoff"></i> Giao Dịch
                     </a>
                     <a class="nav-link {% if request.endpoint == 'recommendations' %}active{% endif %}" href="/recommendations">
-                        <i class="bi bi-lightbulb"></i> Goi Y
+                        <i class="bi bi-lightbulb"></i> Gợi Ý
                     </a>
                 </nav>
                 
                 <div class="mt-4 px-3">
                     <small class="text-white-50">
                         <i class="bi bi-database"></i> MongoDB Connected<br>
-                        <i class="bi bi-check-circle"></i> Data from Hadoop/Spark
+                        <i class="bi bi-check-circle"></i> Hadoop/Spark
                     </small>
                 </div>
             </div>

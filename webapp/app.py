@@ -6,8 +6,8 @@ Retail Analytics Web Application
 """
 
 from flask import Flask, render_template, jsonify, request
-from pymongo import MongoClient
-from bson import json_util
+from pymongo import MongoClient #type: ignore
+from bson import json_util  #type: ignore
 import json
 import os
 
@@ -109,14 +109,14 @@ def customer_detail(customer_id):
     db = get_db()
     
     # Tìm khách hàng
-    customer = db.customer_clusters.find_one({'CustomerID': int(customer_id)})
-    if not customer:
-        customer = db.customer_clusters.find_one({'CustomerID': customer_id})
+    customer = db.customer_clusters.find_one({'CustomerID': customer_id})
+    # if not customer:
+    #     customer = db.customer_clusters.find_one({'CustomerID': customer_id})
     
     # Tìm dữ liệu RFM
-    rfm = db.customer_rfm.find_one({'CustomerID': int(customer_id)})
-    if not rfm:
-        rfm = db.customer_rfm.find_one({'CustomerID': customer_id})
+    rfm = db.customer_rfm.find_one({'CustomerID': customer_id})
+    # if not rfm:
+    #     rfm = db.customer_rfm.find_one({'CustomerID': customer_id})
     
     return render_template('customer_detail.html',
                          customer=parse_json(customer),

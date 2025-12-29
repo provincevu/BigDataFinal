@@ -161,7 +161,7 @@
 {% block scripts %}
 <script>
 // Dữ liệu phân bố theo giờ
-const hourlyData = {{ hourly_distribution | tojson | safe }};
+const hourlyData = JSON.parse('{{ hourly_distribution | tojson | safe }}');
 
 // Tạo labels và values cho biểu đồ
 const hours = Array.from({length: 24}, (_, i) => i + ':00');

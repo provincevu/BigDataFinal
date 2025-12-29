@@ -1,0 +1,141 @@
+# Giải thích các câu lệnh PySpark trong retail_etl_simple.py
+
+## 1. Tạo Spark Session
+```python
+def create_spark_session():
+    spark = SparkSession.builder \
+        .appName("RetailDataPipelineSimple") \
+        .master("local[*]") \
+        .config("spark.mongodb.read.connection.uri", "mongodb://admin:admin123@mongodb:27017/retail_analytics?authSource=admin") \
+        .config("spark.mongodb.write.connection.uri", "mongodb://admin:admin123@mongodb:27017/retail_analytics?authSource=admin") \
+        .config("spark.driver.memory", "4g") \
+        .getOrCreate()
+```
+- **SparkSession.builder**: Tạo một SparkSession, là điểm bắt đầu để sử dụng PySpark.
+- **appName**: Đặt tên cho ứng dụng Spark.
+- **master**: Chỉ định chế độ chạy (ở đây là `local[*]`, sử dụng tất cả các CPU cores).
+- **config**: Cấu hình các tham số, ví dụ như URI kết nối MongoDB và bộ nhớ driver.
+
+---
+
+## 2. Định nghĩa Schema
+```python
+def define_schema():
+    return StructType([
+        StructField("InvoiceNo", StringType(), True),
+        StructField("StockCode", StringType(), True),
+        StructField("Description", StringType(), True),
+        StructField("Quantity", IntegerType(), True),
+        StructField("InvoiceDate", StringType(), True),
+        StructField("UnitPrice", DoubleType(), True),
+        StructField("CustomerID", DoubleType(), True),
+        StructField("Country", StringType(), True)
+    ])
+```
+- **StructType**: Định nghĩa cấu trúc dữ liệu (schema) cho DataFrame.
+- **StructField**: Định nghĩa từng cột trong schema với tên, kiểu dữ liệu và tính nullable.
+
+---
+
+## 3. Load và làm sạch dữ liệu
+```python
+df = spark.read \
+    .option("header", "true") \
+    .option("inferSchema", "false") \
+    .schema(schema) \
+    .csv(input_path)
+```
+- **spark.read.csv**: Đọc dữ liệu từ file CSV.
+- **option("header", "true")**: Chỉ định rằng file CSV có header.
+- **schema(schema)**: Áp dụng schema đã định nghĩa trước đó.
+
+```python
+df_cleaned = df \
+    .withColumn("CustomerID", 
+        when(col("CustomerID").isNull(), lit("unknown"))
+        .otherwise(col("CustomerID").cast(IntegerType()).cast(StringType()))
+    ) \
+    .filter(col("Quantity") > 0) \
+    .filter(col("UnitPrice") > 0) \
+    .filter(~col("InvoiceNo").startswith("C")) \
+    .withColumn("InvoiceDate", to_timestamp(col("InvoiceDate"), "yyyy-MM-dd HH:mm:ss")) \
+    .withColumn("TotalAmount", spark_round(col("Quantity") * col("UnitPrice"), 2))
+```
+- **withColumn**: Thêm hoặc thay đổi cột trong DataFrame.
+- **when/otherwise**: Tạo điều kiện để xử lý giá trị null hoặc chuyển đổi kiểu dữ liệu.
+- **filter**: Lọc các bản ghi dựa trên điều kiện.
+- **to_timestamp**: Chuyển đổi chuỗi thành kiểu timestamp.
+- **spark_round**: Làm tròn giá trị số.
+
+---
+
+## 4. Lưu vào HDFS
+```python
+df.write \
+    .mode("overwrite") \
+    .format("parquet") \
+    .save(path)
+```
+- **write**: Ghi DataFrame ra file.
+- **mode("overwrite")**: Ghi đè dữ liệu nếu đã tồn tại.
+- **format("parquet")**: Lưu dữ liệu dưới định dạng Parquet.
+- **save(path)**: Chỉ định đường dẫn lưu trữ.
+
+---
+
+## 5. Lưu vào MongoDB
+```python
+df.write \
+    .format("mongodb") \
+    .mode("overwrite") \
+    .option("connection.uri", f"mongodb://admin:admin123@mongodb:27017") \
+    .option("database", "retail_analytics") \
+    .option("collection", collection_name) \
+    .save()
+```
+- **format("mongodb")**: Chỉ định định dạng đầu ra là MongoDB.
+- **option("connection.uri")**: URI kết nối đến MongoDB.
+- **option("database")**: Tên database trong MongoDB.
+- **option("collection")**: Tên collection trong MongoDB.
+
+---
+
+## 6. Phân tích dữ liệu
+### Phân tích doanh thu
+```python
+monthly_revenue = df.groupBy("Year", "Month") \
+    .agg(
+        count("InvoiceNo").alias("TotalOrders"),
+        spark_round(spark_sum("TotalAmount"), 2).alias("TotalRevenue"),
+        spark_round(avg("TotalAmount"), 2).alias("AvgOrderValue")
+    ) \
+    .orderBy("Year", "Month")
+```
+- **groupBy**: Nhóm dữ liệu theo các cột (Year, Month).
+- **agg**: Tính toán các giá trị tổng hợp (sum, avg, count).
+- **alias**: Đặt tên cho các cột kết quả.
+- **orderBy**: Sắp xếp kết quả theo thứ tự.
+
+### Phân tích khách hàng (RFM)
+```python
+customer_rfm = df.groupBy("CustomerID", "Country") \
+    .agg(
+        count("InvoiceNo").alias("Frequency"),
+        spark_round(spark_sum("TotalAmount"), 2).alias("Monetary"),
+        spark_max("InvoiceDate").alias("LastPurchase")
+    )
+```
+- **spark_max**: Lấy giá trị lớn nhất (ở đây là ngày cuối cùng mua hàng).
+- **Recency**: Tính số ngày từ lần mua cuối đến ngày hiện tại.
+
+---
+
+## 7. Chạy toàn bộ pipeline
+```python
+def run_pipeline():
+    spark = create_spark_session()
+    df = load_and_clean_data(spark, input_path)
+    save_to_hdfs(df, "hdfs://namenode:9000/user/retail/processed_data")
+    save_to_mongodb(df, "processed_data")
+```
+- **run_pipeline**: Hàm chính để chạy toàn bộ các bước ETL.
